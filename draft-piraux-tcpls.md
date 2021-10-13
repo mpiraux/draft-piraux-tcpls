@@ -28,15 +28,15 @@ author:
     email: frochet@ed.ac.uk
 
 normative:
+  RFC8446:
+
+informative:
   RFC4960:
   RFC6335:
   RFC7258:
-  RFC8446:
   RFC8548:
   RFC8684:
   RFC9000:
-
-informative:
 
 
 --- abstract
@@ -51,7 +51,7 @@ in a secure manner.
 
 The TCP/IP protocol stack continuously evolves. In the early days, most
 applications were interacting with the transport layer (mainly TCP, but
-also UDP) using the socket API. This is illustrated in {{fig-arch-old}}.
+also UDP) using the socket API. This is illustrated in {{fig-intro-old}}.
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 +------------------------------+
@@ -62,7 +62,7 @@ also UDP) using the socket API. This is illustrated in {{fig-arch-old}}.
 |             IPv4             |
 +------------------------------+
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
-{: #fig-arch-old title="The classical TCP/IP protocol stack"}
+{: #fig-intro-old title="The classical TCP/IP protocol stack"}
 
 The TCP/IP stack has slowly evolved and the figure above does not
 anymore describe current Internet applications. IPv6 is now widely
@@ -72,7 +72,7 @@ extensions including Multipath TCP {{RFC8684}} or tcpcrypt {{RFC8548}}
 have been specified. The security aspects of the TCP/IP protocol suite
 are much more important today than in the past {{RFC7258}}.  Many
 applications rely on TLS {{RFC8446}} and their stack is
-similar to the one shown in {{fig-arch-today}}.
+similar to the one shown in {{fig-intro-today}}.
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 +------------------------------+
@@ -85,7 +85,7 @@ similar to the one shown in {{fig-arch-today}}.
 |         IPv4 and IPv6        |
 +------------------------------+
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
-{: #fig-arch-today title="Today's TCP/IP protocol stack"}
+{: #fig-intro-today title="Today's TCP/IP protocol stack"}
 
 Recently, the IETF went one step further in improving the transport
 layer with the QUIC protocol {{RFC9000}}. QUIC is a new secure transport
@@ -107,7 +107,7 @@ implementable in user space.
 |         IPv4 and IPv6        |
 +------------------------------+
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
-{: #fig-arch-quic title="QUIC protocol stack"}
+{: #fig-intro-quic title="QUIC protocol stack"}
 
 In this document, we revisit how TCP and TLS 1.3 can be used to
 provide modern transport services to applications. We apply a similar principle
@@ -127,20 +127,75 @@ ability to pass through middleboxes.
 |         IPv4 and IPv6        |
 +------------------------------+
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
-{: #fig-arch-tcpls title="TCPLS in the TCP/IP protocol stack"}
+{: #fig-intro-tcpls title="TCPLS in the TCP/IP protocol stack"}
 
 In this document, we will use the term TLS/TCP to refer to the TLS 1.3
 protocol running over a TCP connection. We reserve the word TCPLS for
 the protocol that is proposed in this document.
 
-This document is organised as follows.
+This document is organised as follows. First, {{overview}} gives an overview
+of TCPLS. Then, {{services}} describes the modern transport services provided by
+TCPLS. Finally, {{format}} describes the format of TCPLS and its TLS Extensions
+introduced in this document.
 
 
 # Conventions and Definitions
 
 {::boilerplate bcp14-tagged}
 
-# Modern Transport Services
+# TCPLS Overview {#overview}
+
+In order for TCPLS to be widely compatible with middleboxes that inspect TCP
+segments and TLS records, it does not modify the TCP connection establishment
+and only adds a TLS extension to the TLS handshake. {{fig-overview-handshake}}
+illustrates the opening of a TCPLS session which starts with the TCP
+3-way handshake, followed by the TLS handshake. In
+the Extensions of the ClientHello and in the server EncryptedExtensions, the
+tcpls_hello TLS Extension is introduced to announce the support of TCPLS.
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Client                                   Server
+ |                    SYN                    |
+ |------------------------------------------>|
+ |                  SYN+ACK                  |
+ |<------------------------------------------|
+ |    ACK, TLS ClientHello + tcpls_hello     |
+ |------------------------------------------>|
+ |  TLS ServerHello, TLS EncryptedExtensions |
+ |                       + tcpls_hello, ...  |
+ |<------------------------------------------|
+ |               TLS Finished                |
+ |------------------------------------------>|
+ |                                           |
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+{: #fig-overview-handshake title="Starting a TCPLS session"}
+
+TCP/TLS offers a single encrypted bytestream service to the application. To
+achieve this, TLS records are used to encrypt and secure chunks of the
+application bytestream and are then sent through the TCP bytestream. TCPLS
+leverages TLS records in a different way. It allows exchanging control and
+application data inside TLS records with TCPLS frames, forming the basic
+unit of TCPLS. A TLS record can be composed of several frames, which cannot
+span several records.
+
+TCPLS is not restricted to using a single TCP connection to exchange these
+frames, as it introduces Head-of-Line blocking between the frames and limit the
+use of the protocol. This documents also specifies how several TCP connections
+can be joined to a TCPLS session. This document illustrates how this feature
+can be leveraged to provide Connection Migration and Multipath capabilities.
+
+# Modern Transport Services {#services}
+
+Application requirements and the devices they run on evolve over time. In
+the early days, most applications involved single-file transfer and ran on
+single-homed computers with a fixed-line network. Today, applications such as
+HTTP require to exchange multiple objects, with different priorities, on
+devices that can move from one access network to another and that often
+have multiple access networks available.
+
+TCPLS draws on the lessons learned from the design of SCTP, MPTCP
+and QUIC to provide three modern transport services to applications in a
+secure manner.
 
 ## Multiplexing
 
@@ -148,9 +203,36 @@ This document is organised as follows.
 
 ## Multipath
 
-# TCPLS Protocol
+# TCPLS Protocol {#format}
 
-## TCPLS Handshake
+## TCPLS TLS Extensions
+
+This document specifies two TLS extensions used by TCPLS. The first,
+tcpls_hello, is used to announce the support of TCPLS. The second,
+tcpls_join, is used to join a TCP connection to a TCPLS session.
+
+### TCPLS Hello
+
+The "tcpls_hello" extension is used by the client and the server to announce
+their support of TCPLS. The extension contains no value. When it is present
+in both the ClientHello and the EncryptedExtensions, the endpoints MUST use
+TCPLS after completing the TLS handshake.
+
+### TCPLS Join
+
+~~~~
+struct {
+    opaque token<1..32>;
+} Join;
+~~~~
+
+The "tcpls_join" extension is used by the client to join the TCP connection
+on which it is sent to a TCPLS session. The extension contains a Token
+provided by the server. The client MUST NOT send more than one
+tcpls_join extension in its ClientHello. When receiving a ClientHello with
+this extension, the server checks that the token is valid and joins the TCP
+connection to the corresponding TCPLS session. When the token is not valid,
+the server MUST abort the handshake with an illegal_parameter alert.
 
 ## TCPLS Frames
 
@@ -163,6 +245,8 @@ TODO Security
 
 This document has no IANA actions.
 
+TODO IANA actions for TLS Extensions
+TODO IANA actions for TCPLS frames
 
 --- back
 
