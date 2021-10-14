@@ -37,6 +37,7 @@ informative:
   RFC8548:
   RFC8684:
   RFC9000:
+  RFC7540:
 
 
 --- abstract
@@ -199,6 +200,28 @@ secure manner.
 
 ## Multiplexing
 
+TCPLS expands the service provided by TCP with streams. Streams are
+independent bidirectional bytestreams that can be used by applications to
+concurrently convey several objects over a TCPLS session.
+Streams can be opened by the client and by the server.
+
+Streams are identified by a 32-bit unsigned integer. The parity of this number
+indicates the initiator of the stream. The client opens even-numbered
+streams while the server opens odd-numbered streams. Streams are opened in
+sequence, e.g. a client that has opened stream 0 will use stream 2 has the
+next one.
+
+Data of the streams is exchanged using Stream frames, for which their format is
+described in {{stream-frame}}. Each Stream frame carries a chunk of data of
+a given stream. Applications can close a stream and set its end, which
+senders encode in the Stream frame.
+
+Similarly to HTTP/2 {{RFC7540}}, conveying several streams on a single TCP
+connection introduces Head-of-Line (HoL) blocking between the streams. To
+alleviate this, TCPLS provides means to the application to choose the degree
+of HoL blocking resilience it needs for its application objects. These means
+are described in the following sections.
+
 ## Connection Migration
 
 ## Multipath
@@ -306,9 +329,9 @@ Stream frame {
 
 FIN:
 
-: The last bit of the frame type bit indicates whether this Stream frame
-ends the stream. The end of the stream is at the sum of the Offset and
-Length fields of this frame.
+: The last bit of the frame type bit indicates that this Stream frame
+ends the stream when its value is 1. The end of the stream is at the sum of the
+Offset and Length fields of this frame.
 
 Stream ID:
 
