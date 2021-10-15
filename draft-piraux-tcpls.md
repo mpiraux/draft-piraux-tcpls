@@ -176,7 +176,7 @@ achieve this, TLS records are used to encrypt and secure chunks of the
 application bytestream and are then sent through the TCP bytestream. TCPLS
 leverages TLS records in a different way. It allows exchanging control and
 application data inside TLS records with TCPLS frames, forming the basic
-unit of TCPLS. A TLS record can be composed of several frames, which cannot
+units of TCPLS. A TLS record can be composed of several frames, which cannot
 span several records.
 
 TCPLS is not restricted to using a single TCP connection to exchange these
@@ -195,8 +195,8 @@ devices that can move from one access network to another and that often
 have multiple access networks available.
 
 TCPLS draws on the lessons learned from the design of SCTP, MPTCP
-and QUIC to provide three modern transport services to applications in a
-secure manner.
+and QUIC to provide three modern transport services atop TCP and TLS to
+applications in a secure manner.
 
 ## Multiplexing
 
@@ -224,7 +224,98 @@ are described in the following sections.
 
 ## Connection Migration
 
+TCPLS enables the application to add new TCP connections to the TCPLS
+session. The simplest use of an other TCP connection is to fall over it in
+the advent of a network failures or due to application policy. This section
+describes the mecanisms needed to achieve this.
+
+### Joining TCP connections
+
+The TCPLS server can provide tokens to the client in order to join new TCP
+connections to the TCPLS session. {{join-connections}} illustrates a client
+and server first establishing a new TCPLS session as described in {{overview}}.
+Then the server sends a token over this connection using the New Token
+frame. The token has a sequence number (i.e. 1) and a value (i.e. "abc").
+The client uses this token to open a new TCP connection and initiates the
+TCPLS handshake. It adds the token inside the TCPLS Join TLS extension in the
+ClientHello.
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+             <-1.TCPLS Handshake->
+       .---------------------------------.
+       |            <-2.New Token(1,abc) |
+       v                                 v
++--------+                            +--------+
+| Client |                            | Server |
++--------+                            +--------+
+       ^                                 ^
+       | 3.TCPLS Handshake + Join(abc)-> |      Legend:
+       .---------------------------------.        --- TCP connection
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+{: #join-connections title="Joining a new TCP connection"}
+
+When receiving a TCPLS Join Extension, the server validates the token and
+associate the TCP connection to the TCPLS session. TCP connections of TCPLS
+session are identified by a 32-bit unsigned integer called Connection ID. The
+first connection of a session has a value of 0. When joining a new connection,
+the sequence number of the token, i.e. 1 in our example, become the
+Connection ID of the connection.
+
+### Record protection
+
+When adding new TCP connections to a TCPLS session, an endpoint does not
+complete the TLS handshake. TCPLS provides a nonce construction for TLS
+record protection that is used for all connections of a session. This
+reduces the cryptographic cost of adding connections. The endpoints SHOULD send
+realistic but random TLS messages to form an apparent complete TLS handshake
+to middleboxes.
+
+In order to expand the TLS session to multiple connections, TCPLS adds a
+record sequence number space per connection that is maintained independently at
+both sides. Each record sent over a TCPLS session is identified by the
+Connection ID of its connection and its record sequence number. Each record
+nonce is constructed as defined in {{fig-record-nonce}}.
+
+~~~
+N                  N-32                   64                    0
++---------------------------------------------------------------+
+|                    client/server_write_iv                     |
++---------------------------------------------------------------+
+         XOR                                        XOR
++-------------------+                      +--------------------+
+|   Connection ID   |                      | Conn. record sequ. |
++-------------------+                      +--------------------+
+~~~
+{: #fig-record-nonce title="TCPLS TLS record nonce construction"}
+
+This construction guarantees that every TLS record sent over the TLS session
+is protected with a unique nonce. As in TLS 1.3, the per-connection record
+sequence is implicit.
+
+### Record Acknowledgements
+
+The receiver frequently acknowledges the records received using the ACK
+frame. Records are acknowledged after the record protection has been
+successfully removed. This enables the sender to know which records have been
+received. TCPLS enables the endpoint to send acknowledgments for a TCP
+connection over any connections, e.g. not only the receiving connection.
+
+### Migration
+
+To migrate from a given TCP connection, an endpoint stops transmitting
+over this TCP connection and sends the following frames on other TCP
+connections. It leverages the acknowledgements to retransmit the frames of
+TLS records that have not been yet acknowledged.
+
+When an endpoint abortfully closes a TCP connection, its peer leverages the
+acknowlegments to retransmit the TLS records that were not acknowlegded.
+
 ## Multipath
+
+When the endpoints have opened several TCP connections, they can send frames
+over the connections. By sending frames of a given stream on two or more
+connections, an endpoint can benefit from the aggregated bandwidth of the
+connections.
 
 # TCPLS Protocol {#format}
 
@@ -245,7 +336,7 @@ TCPLS after completing the TLS handshake.
 
 ~~~~
 struct {
-    opaque token<1..32>;
+    opaque token<32>;
 } Join;
 ~~~~
 
@@ -256,6 +347,10 @@ tcpls_join extension in its ClientHello. When receiving a ClientHello with
 this extension, the server checks that the token is valid and joins the TCP
 connection to the corresponding TCPLS session. When the token is not valid,
 the server MUST abort the handshake with an illegal_parameter alert.
+
+By controlling the amount of tokens given to the client, the server can
+control the number of active TCP connections of a session. The server SHOULD
+replenish the tokens
 
 ## TCPLS Frames
 
@@ -271,7 +366,7 @@ specified in this document.
 | 0x01       | Ping              |       | {{ping-frame}}              |
 | 0x02-0x03  | Stream            |       | {{stream-frame}}            |
 | 0x04       | ACK               | A     | {{ack-frame}}               |
-| 0x05       | New Token         |       | {{new-token-frame}}         |
+| 0x05       | New Token         |  S    | {{new-token-frame}}         |
 | 0x06       | New Address       |       | {{new-address-frame}}       |
 | 0x07       | Connection Failed |       | {{connection-failed-frame}} |
 {: #tcpls-frame-types title="TCPLS frames"}
@@ -281,8 +376,12 @@ regarding certain frames.
 
 A:
 
-: Non-ack-eliciting. Receiving this frame does not elicit the immediate sending
-of an acknowledgment.
+: Non-ack-eliciting. Receiving this frame does not elicit the sending of an
+acknowledgment.
+
+S:
+
+: Server only. This frame MUST NOT be sent by the client.
 
 ### Padding frame
 
