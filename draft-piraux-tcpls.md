@@ -100,7 +100,7 @@ the reliability and security features brings a lot of benefits in QUIC.
 QUIC runs above UDP to be able to pass through most middleboxes and to be
 implementable in user space. An important point to note about QUIC is
 that while it reuses TLS, it does not strictly layer TLS on top of UDP as DTLS
-{{I-D.ietf-tls-dtls13}}. This organisation, described in {{fig-intro-quic}}
+{{I-D.ietf-tls-dtls13}}. This organisation, illustrated in {{fig-intro-quic}}
 provides much more flexibility than simply layering TLS above UDP.
 For example, the QUIC migration capabilities enable an application to migrate
 an existing QUIC session from an IPv4 path to an IPv6 one.
@@ -144,7 +144,7 @@ protocol running over one TCP connection. We reserve the word TCPLS for
 the protocol proposed in this document.
 
 This document is organised as follows. First, {{services}} summarizes the
-different types of services that modern transport expose to application.
+different types of services that modern transports expose to application.
 {{overview}} gives an overview of TCPLS and how it supports these
 services. Finally, {{format}} describes the TCPLS in more details
 and the TLS Extensions introduced in this document.
@@ -173,20 +173,20 @@ supports multiple streams and QUIC adopted a similar approach to prevent
 head of line blocking.
 
 Modern transport services also changed the utilization of the underlying network.
-With TCP, when a host creates a connection, this connection is bound to the
-IP addresses used by the client and the server during the handshake. If the client
-and receives a different IP address, it must reestablish all TCP connections.
-If the client and the server are dual-stack, they cannot easily switch from
+With TCP, when a host creates a connection, it is bound to the
+IP addresses used by the client and the server during the handshake. When the
+client moves and receives a different IP address, it must reestablish all TCP
+connections bound to the previous address.
+When the client and the server are dual-stack, they cannot easily switch from
 one address family to another. Happy Eyeballs {{RFC8305}} provides a partial
 answer to this problem for web applications with heuristics that clients can
 use to probe TCP connections with different address families. Multipath TCP
 {{RFC8684}} provides full multipath support. With Multipath TCP, the client and the
-server can learn the other addresses of the remote host and combine several
+server can learn other addresses of the remote host and combine several
 TCP connections within a single Multipath TCP connection that is exposed to
 the application. This supports various use cases {{RFC8041}}. QUIC {{RFC9000}}
 enables applications to migrate from one network path to another, but not
 to simultaneously use different paths.
-
 
 # TCPLS Overview {#overview}
 
@@ -196,7 +196,7 @@ and only adds a TLS extension to the TLS handshake. {{fig-overview-handshake}}
 illustrates the opening of a TCPLS session which starts with the TCP
 3-way handshake, followed by the TLS handshake. In
 the Extensions of the ClientHello and in the server EncryptedExtensions, the
-tcpls_hello TLS Extension is introduced to announce the support of TCPLS.
+tcpls TLS Extension is introduced to announce the support of TCPLS.
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Client                                   Server
@@ -204,10 +204,10 @@ Client                                   Server
  |------------------------------------------>|
  |                  SYN+ACK                  |
  |<------------------------------------------|
- |    ACK, TLS ClientHello + tcpls_hello     |
+ |       ACK, TLS ClientHello + tcpls        |
  |------------------------------------------>|
  |  TLS ServerHello, TLS EncryptedExtensions |
- |                       + tcpls_hello, ...  |
+ |                          + tcpls, ...     |
  |<------------------------------------------|
  |               TLS Finished                |
  |------------------------------------------>|
@@ -228,8 +228,6 @@ never spans two or more records. {{fig-tcpls-frames}} illustrates the relationsh
 between TCPLS frames and TLS records.
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-
   TCPLS Data     TCP Control   TCPLS Data     TCPLS Data
   abcdef         0010010       ghijkl         mnopq...
   <--------->   <----------->  <--------->   <------------>
@@ -244,10 +242,8 @@ between TCPLS frames and TLS records.
 +----------------+     +-----------------+
 |   TLS record n |     | TLS record n+1  |  ....
 +----------------+     +-----------------+
-
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
-{: #fig-tcpls-frames title="Starting a TCPLS session"}
-
+{: #fig-tcpls-frames title="TCPLS frames in TLS records"}
 
 
 ## Multiple Streams
@@ -260,7 +256,7 @@ Streams can be opened by the client and by the server.
 Streams are identified by a 32-bit unsigned integer. The parity of this number
 indicates the initiator of the stream. The client opens even-numbered
 streams while the server opens odd-numbered streams. Streams are opened in
-sequence, e.g. a client that has opened stream 0 will use stream 2 has the
+sequence, e.g. a client that has opened stream 0 will use stream 2 as the
 next one.
 
 Data is exchanged using Stream frames whose format is
@@ -275,7 +271,6 @@ streams among different underlying TCP connections.
 
 
 ## Multiple TCP connections
-
 
 TCPLS is not restricted to using a single TCP connection to exchange frames.
 A TCPLS session starts with the TCP connection that was used to transport the
@@ -294,16 +289,17 @@ correspond to one Multipath TCP connection, it must respond with RST to
 the in excess connection attempts. TCPLS takes another approach. To control
 the number of connections that a client can establish, a TCPLS server
 supplies unique tokens. A client must include one of the server supplied tokens
-when it attaches a new TCP connection to a TCPLS session.
+when it attaches a new TCP connection to a TCPLS session. Each token can
+only be used once, hence limiting the amount of additional TCP connections.
 
 
 ### Joining TCP connections
 
-The TCPLS server providex tokens to the client in order to join new TCP
+The TCPLS server provides tokens to the client in order to join new TCP
 connections to the TCPLS session. {{join-connections}} illustrates a client
 and server first establishing a new TCPLS session as described in {{overview}}.
 Then the server sends a token over this connection using the New Token
-frame. Each token has a sequence number (i.e. 1) and a value (i.e. "abc").
+frame. Each token has a sequence number (e.g. 1) and a value (e.g. "abc").
 The client uses this token to open a new TCP connection and initiates the
 TCPLS handshake. It adds the token inside the TCPLS Join TLS extension in the
 ClientHello.
@@ -333,30 +329,32 @@ Connection ID of the connection. The Connection ID enables the Client and
 the Server to identify a specific TCP connection within a given TCPLS
 session.
 
+
 ### Failover
 
-TCPLS supports two types of failover. In make before break, the client
-creates a TCP connection using the procedure described above but
-only uses it once the initial connection fails.
+TCPLS supports two types of failover. In make-before-break, the client
+creates a TCP connection using the procedure described in
+{{joining-tcp-connections}} but only uses it once the initial connection fails.
 
-In break before make, the
-client creates the inital TCP connection and uses it for the TCPLS handshake
-the the data. The Server advertises one or more tokens over this connection.
-Upon failure of the initial TCP connection, the Client initiates a
-second TCP connection using the Server provided token.
+In break-before-make, the
+client creates the initial TCP connection and uses it for the TCPLS handshake
+and the data. The server advertises one or more tokens over this connection.
+Upon failure of the initial TCP connection, the client initiates a
+second TCP connection using the server-provided token.
 
-In both cases, some of the frames sent by Client or the Server might be
-in transit with the failure occurs. Some of these frames could have been partially
-received but not yet delivered to the TCPLS layer when the underlying TCP
-connection fails. Other frames could have alreayd been delivered to the application.
-To prevent data losses and duplication, TCPLS includes its own acknowledgements.
+In both cases, some of the records sent by client or the server might be
+in transit when the failure occurs. Some of these records could have been
+partially received but not yet delivered to the TCPLS layer when the
+underlying TCP connection fails. Other records could have already received,
+decrypted and data of their frames could have been delivered to the
+application. To prevent data losses and duplication, TCPLS includes its own
+acknowledgements.
 
-A TCPLS receiver frequently acknowledges the records received using the ACK
+A TCPLS receiver frequently acknowledges the received records using the ACK
 frame. Records are acknowledged after the record protection has been
 successfully removed. This enables the sender to know which records have been
 received. TCPLS enables the endpoint to send acknowledgments for a TCP
 connection over any connections, e.g. not only the receiving connection.
-
 
 
 ### Migration
@@ -369,8 +367,8 @@ TLS records that have not been yet acknowledged.
 When an endpoint abortfully closes a TCP connection, its peer leverages the
 acknowlegments to retransmit the TLS records that were not acknowlegded.
 
-### Multipath transport
 
+### Multipath transport
 
 TCPLS also supports the utilization of different TCP connections, over
 different paths or interfaces, to improve throughput or spread stream frames
@@ -391,7 +389,7 @@ reduces the cryptographic cost of adding connections. The endpoints SHOULD send
 realistic but random TLS messages to form an apparent complete TLS handshake
 to middleboxes.
 
-In order to expand the TLS session to multiple connections, TCPLS adds a
+In order to use the TLS session over multiple connections, TCPLS adds a
 record sequence number space per connection that is maintained independently at
 both sides. Each record sent over a TCPLS session is identified by the
 Connection ID of its connection and its record sequence number. Each record
@@ -419,12 +417,12 @@ sequence is implicit.
 ## TCPLS TLS Extensions
 
 This document specifies two TLS extensions used by TCPLS. The first,
-tcpls_hello, is used to announce the support of TCPLS. The second,
+tcpls, is used to announce the support of TCPLS. The second,
 tcpls_join, is used to join a TCP connection to a TCPLS session.
 
 ### TCPLS Hello
 
-The "tcpls_hello" extension is used by the client and the server to announce
+The "tcpls" extension is used by the client and the server to announce
 their support of TCPLS. The extension contains no value. When it is present
 in both the ClientHello and the EncryptedExtensions, the endpoints MUST use
 TCPLS after completing the TLS handshake.
@@ -447,7 +445,7 @@ the server MUST abort the handshake with an illegal_parameter alert.
 
 By controlling the amount of tokens given to the client, the server can
 control the number of active TCP connections of a session. The server SHOULD
-replenish the tokens
+replenish the tokens when TCP connections are removed from the TCPLS session.
 
 ## TCPLS Frames
 
@@ -459,19 +457,18 @@ specified in this document.
 
 | Type value | Frame name        | Rules | Definition                  |
 |:-----------|:------------------|:------|:----------------------------|
-| 0x00       | Padding           | A     | {{padding-frame}}           |
+| 0x00       | Padding           | N     | {{padding-frame}}           |
 | 0x01       | Ping              |       | {{ping-frame}}              |
 | 0x02-0x03  | Stream            |       | {{stream-frame}}            |
-| 0x04       | ACK               | A     | {{ack-frame}}               |
+| 0x04       | ACK               | N     | {{ack-frame}}               |
 | 0x05       | New Token         |  S    | {{new-token-frame}}         |
-| 0x06       | New Address       |       | {{new-address-frame}}       |
-| 0x07       | Connection Failed |       | {{connection-failed-frame}} |
+| 0x06       | Connection Reset  |       | {{connection-reset-frame}} |
 {: #tcpls-frame-types title="TCPLS frames"}
 
 The "Rules" column in {{tcpls-frame-types}} indicates special requirements
 regarding certain frames.
 
-A:
+N:
 
 : Non-ack-eliciting. Receiving this frame does not elicit the sending of an
 acknowledgment.
@@ -497,8 +494,8 @@ Padding frame {
 
 This frame is used to elicit an acknowledgment from its peer. It has no
 content. When an endpoint receives a Ping frame, it acknowledges the TLS
-record that contains this frame. This frame can be used to check that the
-peer can receive TLS records over a particular TCP connection.
+record that contains this frame. This frame can be used by an endpoint to check
+that its peer can receive TLS records over a particular TCP connection.
 
 ~~~
 Ping frame {
@@ -509,7 +506,7 @@ Ping frame {
 
 ### Stream frame
 
-This frame is used to carry chunks of data of a stream.
+This frame is used to carry chunks of data of a given stream.
 
 ~~~
 Stream frame {
@@ -591,50 +588,23 @@ Token:
 
 : A 32-byte opaque value that can be used as a token by the client.
 
-### New Address frame
-
-This frame is used by an endpoint to communicate a new address to its peer.
-
-~~~
-New Address frame {
-    Type (8) = 0x06,
-    Address ID (8),
-    IP Version (8),
-    Address (32..128),
-}
-~~~
-{: #new-address-frame-format title="New Address frame format"}
-
-Address ID:
-
-: A 8-bit unsigned integer indicating the ID of the address.
-
-IP Version:
-
-: A 8-bit unsigned integer indicating the IP version of the address.
-
-Address:
-
-: The address value
-
-### Connection Failed frame
+### Connection Reset frame
 
 This frame is used by the receiver to inform the sender that a TCP
-connection has failed, for instance due to a timeout or the receipt of a
-spurious RST. The frame has a per-connection sequence to distinguish new
-signals from delayed ones. Each endpoint keeps track of the largest
-sequence number received for each connection. When receiving a Connection
-Failed frame that does not increase the largest sequence number of its
-connection, the endpoint MUST ignore the frame.
+connection has been reset. The frame has a per-connection sequence
+to distinguish new signals from delayed ones. Each endpoint keeps track of
+the largest sequence number received for each connection. When receiving a
+Connection Reset frame that does not increase the largest sequence number
+of its connection, the endpoint MUST ignore the frame.
 
 ~~~
-Connection Failed frame {
+Connection Reset frame {
     Type (8) = 0x07,
     Connection ID (32),
     Sequence (8),
 }
 ~~~
-{: #connection-failed-format title="Connection Failed format"}
+{: #connection-failed-format title="Connection Reset format"}
 
 Connection ID:
 
@@ -642,8 +612,8 @@ Connection ID:
 
 Sequence:
 
-: A 8-bit unsigned integer encoding the sequence of Connection Failed frame
-sent for the connection.
+: A 8-bit unsigned integer encoding the sequence number of Connection Reset
+frame sent for the connection.
 
 # Security Considerations
 
@@ -662,4 +632,5 @@ TODO IANA actions for TCPLS frames
 # Acknowledgments
 {:numbered="false"}
 
-TODO acknowledge.
+This work has been partially supported by the MQUIC project and the NGI
+POINTER work programme.
