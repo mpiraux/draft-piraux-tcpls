@@ -29,6 +29,7 @@ author:
 
 normative:
   RFC8446:
+  RFC8126:
 
 informative:
   RFC4960:
@@ -419,7 +420,16 @@ sequence is implicit.
 
 This document specifies two TLS extensions used by TCPLS. The first,
 tcpls, is used to announce the support of TCPLS. The second,
-tcpls_join, is used to join a TCP connection to a TCPLS session.
+tcpls_join, is used to join a TCP connection to a TCPLS session. Their types
+are defined as follows.
+
+~~~
+enum {
+    tcpls(TBD1),
+    tcpls_join(TBD2),
+    (65535)
+} ExtensionType;
+~~~
 
 ### TCPLS Hello
 
@@ -600,7 +610,7 @@ of its connection, the endpoint MUST ignore the frame.
 
 ~~~
 Connection Reset frame {
-    Type (8) = 0x07,
+    Type (8) = 0x06,
     Connection ID (32),
     Sequence (8),
 }
@@ -623,10 +633,33 @@ TODO Security
 
 # IANA Considerations
 
-This document has no IANA actions.
+IANA is requested to create a new "TCPLS" heading for the new registry
+described in {{tcpls-frames}}. New registrations in TCPLS registries follow
+the "Specification Required" policy of {{RFC8126}}.
 
-TODO IANA actions for TLS Extensions
-TODO IANA actions for TCPLS frames
+## TCPLS TLS Extensions
+
+IANA is requested to add the following entries to the existing "TLS
+ExtensionType Values" registry.
+
+| Value | Extension Name | TLS 1.3 | Recommended | Reference     |
+|:------|:---------------|:--------|:------------|:--------------|
+| TBD1  | tcpls          | CH, SH  | N           | This document |
+| TBD2  | tcpls_join     | CH      | N           | This document |
+
+Note that "Recommended" is set to N as these extensions are intended for
+uses as described in this document.
+
+## TCPLS Frames
+
+IANA is requested to create a new registry "TCPLS Frames Types" under the
+"TCPLS" heading.
+
+The registry governs a 8-bit space. Entries in this registry must include a
+"Frame name" field containing a short mnemonic for the frame type. The
+initial content of the registry is present in {{tcpls-frame-types}}, without
+the "Rules" column.
+
 
 --- back
 
