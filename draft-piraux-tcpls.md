@@ -86,7 +86,7 @@ similar to the one shown in {{fig-intro-today}}.
 +------------------------------+
 |             TCP              |
 +------------------------------+
-|         IPv4 and IPv6        |
+|          IPv4/IPv6           |
 +------------------------------+
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 {: #fig-intro-today title="Today's TCP/IP protocol stack"}
@@ -98,12 +98,12 @@ congestion control features that are part of TCP and integrates the
 security features of TLS 1.3 {{RFC8446}}. This close integration between
 the reliability and security features brings a lot of benefits in QUIC.
 QUIC runs above UDP to be able to pass through most middleboxes and to be
-implementable in user space. An important point to note about QUIC is
-that while it reuses TLS, it does not strictly layer TLS on top of UDP as DTLS
-{{I-D.ietf-tls-dtls13}}. This organisation, illustrated in {{fig-intro-quic}}
-provides much more flexibility than simply layering TLS above UDP.
-For example, the QUIC migration capabilities enable an application to migrate
-an existing QUIC session from an IPv4 path to an IPv6 one.
+implementable in user space. While QUIC reuses TLS, it does not strictly layer
+TLS on top of UDP as DTLS {{I-D.ietf-tls-dtls13}}. This organisation,
+illustrated in {{fig-intro-quic}} provides much more flexibility than simply
+layering TLS above UDP. For example, the QUIC migration capabilities enable
+an application to migrate an existing QUIC session from an IPv4 path to an
+IPv6 one.
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 +------------------------------+
@@ -113,7 +113,7 @@ an existing QUIC session from an IPv4 path to an IPv6 one.
 |   TLS   |   QUIC   ..........|
 |..........          |   UDP   |
 +------------------------------+
-|         IPv4 and IPv6        |
+|          IPv4/IPv6           |
 +------------------------------+
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 {: #fig-intro-quic title="QUIC protocol stack"}
@@ -123,8 +123,8 @@ provide modern transport services to applications. We apply a similar principle
 and combine TCP and TLS 1.3 in a protocol that we call TCPLS.
 TCPLS leverages the security features of TLS 1.3 like QUIC, but without
 begin simply layered above a single TCP connection. In addition,
-TCPLS reuses the existing high performance TCP stacks and TCP's wider
-ability to pass through middleboxes.
+TCPLS reuses the existing TCP stacks and TCP's wider support in current
+networks.
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 +------------------------------+
@@ -134,7 +134,7 @@ ability to pass through middleboxes.
 |   TLS   |   TCPLS  ..........|
 |..........          |   TCP   |
 +------------------------------+
-|         IPv4 and IPv6        |
+|          IPv4/IPv6           |
 +------------------------------+
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 {: #fig-intro-tcpls title="TCPLS in the TCP/IP protocol stack"}
@@ -143,7 +143,7 @@ In this document, we use the term TLS/TCP to refer to the TLS 1.3
 protocol running over one TCP connection. We reserve the word TCPLS for
 the protocol proposed in this document.
 
-This document is organised as follows. First, {{services}} summarizes the
+This document is organized as follows. First, {{services}} summarizes the
 different types of services that modern transports expose to application.
 {{overview}} gives an overview of TCPLS and how it supports these
 services. Finally, {{format}} describes the TCPLS in more details
@@ -162,7 +162,9 @@ the early days, most applications involved single-file transfer and ran on
 single-homed computers with a fixed-line network. Today, web-based applications
 require to exchange multiple objects, with different priorities, on
 devices that can move from one access network to another and that often
-have multiple access networks available.
+have multiple access networks available. Security is also a key requirement
+of applications that evolved from only guaranteeing the confidentiality and
+integrity of application messages to also preventing pervasive monitoring.
 
 With TCP and TLS/TCP, applications use a single connection that supports
 a single bytestream in each direction.
@@ -175,13 +177,13 @@ head of line blocking.
 Modern transport services also changed the utilization of the underlying network.
 With TCP, when a host creates a connection, it is bound to the
 IP addresses used by the client and the server during the handshake. When the
-client moves and receives a different IP address, it must reestablish all TCP
+client moves and receives a different IP address, it has to reestablish all TCP
 connections bound to the previous address.
 When the client and the server are dual-stack, they cannot easily switch from
 one address family to another. Happy Eyeballs {{RFC8305}} provides a partial
 answer to this problem for web applications with heuristics that clients can
-use to probe TCP connections with different address families. Multipath TCP
-{{RFC8684}} provides full multipath support. With Multipath TCP, the client and the
+use to probe TCP connections with different address families.
+With Multipath TCP, the client and the
 server can learn other addresses of the remote host and combine several
 TCP connections within a single Multipath TCP connection that is exposed to
 the application. This supports various use cases {{RFC8041}}. QUIC {{RFC9000}}
@@ -220,11 +222,11 @@ TCP/TLS offers a single encrypted bytestream service to the application. To
 achieve this, TLS records are used to encrypt and secure chunks of the
 application bytestream and are then sent through the TCP bytestream. TCPLS
 leverages TLS records in a different way. TCPLS defines its own framing
-mechanism that allows to encode both application data and control information.
+mechanism that allows encoding both application data and control information.
 A TCPLS frame is the basic unit of information for TCPLS. One or more
-TCPLS frames can be placed inside a TCPLS record. This TLS record is
-then reliably transported by a TCP connection. However, a TCPLS frame
-never spans two or more records. {{fig-tcpls-frames}} illustrates the relationship
+TCPLS frames can be placed inside a TLS record. A TCPLS frame always fits in
+a single record. This TLS record is then reliably transported by a TCP
+connection. {{fig-tcpls-frames}} illustrates the relationship
 between TCPLS frames and TLS records.
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -243,12 +245,12 @@ between TCPLS frames and TLS records.
 |   TLS record n |     | TLS record n+1  |  ....
 +----------------+     +-----------------+
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
-{: #fig-tcpls-frames title="TCPLS frames in TLS records"}
+{: #fig-tcpls-frames title="The first TLS record contains three TCPLS frames"}
 
 
 ## Multiple Streams
 
-TCPLS expands the service provided by TCP with streams. Streams are
+TCPLS extends the service provided by TCP with streams. Streams are
 independent bidirectional bytestreams that can be used by applications to
 concurrently convey several objects over a TCPLS session.
 Streams can be opened by the client and by the server.
@@ -275,20 +277,20 @@ streams among different underlying TCP connections.
 TCPLS is not restricted to using a single TCP connection to exchange frames.
 A TCPLS session starts with the TCP connection that was used to transport the
 TLS handshake. After this handshake, other TCP connections can be added
-to a TCPLS session, either to spread the load or for failovers. TCPLS manages
+to a TCPLS session, either to spread the load or for failover. TCPLS manages
 the utilisation of the underlying TCP connections within a TCPLS session.
 
 Multipath TCP enables both the client and the server to establish additional
-TCP connections. However, experience has shown that connections are only
+TCP connections. However, experience has shown that additional subflows are only
 established by the clients. TCPLS focuses on this deployment and only allows
-clients to create TCP connections.
+clients to create additional TCP connections.
 
 Using Multipath TCP, a client can try to establish a new TCP connection at
 any time. If a server wishes to restrict the number of TCP connections that
-correspond to one Multipath TCP connection, it must respond with RST to
+correspond to one Multipath TCP connection, it has to respond with RST to
 the in excess connection attempts. TCPLS takes another approach. To control
 the number of connections that a client can establish, a TCPLS server
-supplies unique tokens. A client must include one of the server supplied tokens
+supplies unique tokens. A client includes one of the server supplied tokens
 when it attaches a new TCP connection to a TCPLS session. Each token can
 only be used once, hence limiting the amount of additional TCP connections.
 
@@ -350,7 +352,7 @@ decrypted and data of their frames could have been delivered to the
 application. To prevent data losses and duplication, TCPLS includes its own
 acknowledgements.
 
-A TCPLS receiver frequently acknowledges the received records using the ACK
+A TCPLS receiver acknowledges the received records using the ACK
 frame. Records are acknowledged after the record protection has been
 successfully removed. This enables the sender to know which records have been
 received. TCPLS enables the endpoint to send acknowledgments for a TCP
@@ -386,8 +388,7 @@ When adding new TCP connections to a TCPLS session, an endpoint does not
 complete the TLS handshake. TCPLS provides a nonce construction for TLS
 record protection that is used for all connections of a session. This
 reduces the cryptographic cost of adding connections. The endpoints SHOULD send
-realistic but random TLS messages to form an apparent complete TLS handshake
-to middleboxes.
+TLS messages to form an apparent complete TLS handshake to middleboxes.
 
 In order to use the TLS session over multiple connections, TCPLS adds a
 record sequence number space per connection that is maintained independently at
@@ -569,7 +570,7 @@ number received on this TCP connection.
 
 This frame is used by the server to provide tokens to the client. Each token
 can be used to join a new TCP connection to the TCPLS session, as described
-in TODO backref. Clients MUST NOT send New Token frames.
+in {{joining-tcp-connections}}. Clients MUST NOT send New Token frames.
 
 ~~~
 New Token frame {
@@ -633,4 +634,5 @@ TODO IANA actions for TCPLS frames
 {:numbered="false"}
 
 This work has been partially supported by the MQUIC project and the NGI
-POINTER work programme.
+POINTER work programme. The authors thanks Quentin De Coninck for his
+comments on the first version of this draft.
