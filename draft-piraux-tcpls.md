@@ -94,13 +94,13 @@ similar to the one shown in {{fig-intro-today}}.
 
 Recently, the IETF went one step further in improving the transport
 layer with the QUIC protocol {{RFC9000}}. QUIC is a new secure transport
-protocol primarly designed for HTTP/3. It includes the reliability and
+protocol primarily designed for HTTP/3. It includes the reliability and
 congestion control features that are part of TCP and integrates the
 security features of TLS 1.3 {{RFC8446}}. This close integration between
 the reliability and security features brings a lot of benefits in QUIC.
 QUIC runs above UDP to be able to pass through most middleboxes and to be
 implementable in user space. While QUIC reuses TLS, it does not strictly layer
-TLS on top of UDP as DTLS {{I-D.ietf-tls-dtls13}}. This organisation,
+TLS on top of UDP as DTLS {{I-D.ietf-tls-dtls13}}. This organization,
 illustrated in {{fig-intro-quic}} provides much more flexibility than simply
 layering TLS above UDP. For example, the QUIC migration capabilities enable
 an application to migrate an existing QUIC session from an IPv4 path to an
@@ -161,7 +161,7 @@ and the TLS Extensions introduced in this document.
 Application requirements and the devices they run on evolve over time. In
 the early days, most applications involved single-file transfer and ran on
 single-homed computers with a fixed-line network. Today, web-based applications
-require to exchange multiple objects, with different priorities, on
+require exchanging multiple objects, with different priorities, on
 devices that can move from one access network to another and that often
 have multiple access networks available. Security is also a key requirement
 of applications that evolved from only guaranteeing the confidentiality and
@@ -170,10 +170,10 @@ integrity of application messages to also preventing pervasive monitoring.
 With TCP and TLS/TCP, applications use a single connection that supports
 a single bytestream in each direction.
 Some TCP applications such as HTTP/2 {{RFC7540}} use multiple
-streams, but these are mapped to a single TCP connections and they leads
-to head of line blocking when packet losses occur. SCTP {{RFC4960}} natively
-supports multiple streams and QUIC adopted a similar approach to prevent
-head of line blocking.
+streams, but these are mapped to a single TCP connection which leads
+to Head-of-Line (HoL) blocking when packet losses occur. SCTP {{RFC4960}}
+supports multiple truly-concurrent streams and QUIC adopted a similar 
+approach to prevent HoL blocking.
 
 Modern transport services also changed the utilization of the underlying network.
 With TCP, when a host creates a connection, it is bound to the
@@ -279,7 +279,7 @@ TCPLS is not restricted to using a single TCP connection to exchange frames.
 A TCPLS session starts with the TCP connection that was used to transport the
 TLS handshake. After this handshake, other TCP connections can be added
 to a TCPLS session, either to spread the load or for failover. TCPLS manages
-the utilisation of the underlying TCP connections within a TCPLS session.
+the utilization of the underlying TCP connections within a TCPLS session.
 
 Multipath TCP enables both the client and the server to establish additional
 TCP connections. However, experience has shown that additional subflows are only
@@ -345,13 +345,13 @@ and the data. The server advertises one or more tokens over this connection.
 Upon failure of the initial TCP connection, the client initiates a
 second TCP connection using the server-provided token.
 
-In both cases, some of the records sent by client or the server might be
+In both cases, some records sent by client or the server might be
 in transit when the failure occurs. Some of these records could have been
 partially received but not yet delivered to the TCPLS layer when the
 underlying TCP connection fails. Other records could have already received,
 decrypted and data of their frames could have been delivered to the
 application. To prevent data losses and duplication, TCPLS includes its own
-acknowledgements.
+acknowledgments.
 
 A TCPLS receiver acknowledges the received records using the ACK
 frame. Records are acknowledged after the record protection has been
@@ -364,7 +364,7 @@ connection over any connections, e.g. not only the receiving connection.
 
 To migrate from a given TCP connection, an endpoint stops transmitting
 over this TCP connection and sends the following frames on other TCP
-connections. It leverages the acknowledgements to retransmit the frames of
+connections. It leverages the acknowledgments to retransmit the frames of
 TLS records that have not been yet acknowledged.
 
 When an endpoint abortfully closes a TCP connection, its peer leverages the
@@ -379,7 +379,7 @@ over different TCP connections.
 When the endpoints have opened several TCP connections, they can send frames
 over the connections. TCPLS can send all the stream frames belonging to a
 given stream over one or more underlying TCP connections. The latter enables
-bandwidth agreggation by using TCP connections established over different
+bandwidth aggregation by using TCP connections established over different
 network paths.
 
 
@@ -655,7 +655,7 @@ uses as described in this document.
 IANA is requested to create a new registry "TCPLS Frames Types" under the
 "TCPLS" heading.
 
-The registry governs a 8-bit space. Entries in this registry must include a
+The registry governs an 8-bit space. Entries in this registry must include a
 "Frame name" field containing a short mnemonic for the frame type. The
 initial content of the registry is present in {{tcpls-frame-types}}, without
 the "Rules" column.
@@ -667,5 +667,5 @@ the "Rules" column.
 {:numbered="false"}
 
 This work has been partially supported by the MQUIC project and the NGI
-POINTER work programme. The authors thanks Quentin De Coninck for his
+POINTER work programme. The authors thank Quentin De Coninck for his
 comments on the first version of this draft.
