@@ -43,6 +43,18 @@ informative:
   RFC7540:
   RFC3552:
   I-D.ietf-tls-dtls13:
+  CONEXT21:
+    author:
+     - ins: F. Rochet
+     - ins: E. Assogba
+     - ins: M. Piraux
+     - ins: K. Edeline
+     - ins: B. Donnet
+     - ins: O. Bonaventure
+    title: TCPLS - Modern Transport Services with TCP and TLS
+    seriesinfo: Proceedings of the The 17th International Conference on emerging Networking EXperiments and Technologies (CoNEXT'21)
+    date: December 2021
+
 
 
 --- abstract
@@ -126,7 +138,7 @@ and combine TCP and TLS 1.3 in a protocol that we call TCPLS.
 TCPLS leverages the security features of TLS 1.3 like QUIC, but without
 begin simply layered above a single TCP connection. In addition,
 TCPLS reuses the existing TCP stacks and TCP's wider support in current
-networks.
+networks. A preliminary version of the TCPLS protocol is described in {{CONEXT21}}.
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 +------------------------------+
@@ -150,6 +162,7 @@ different types of services that modern transports expose to application.
 {{overview}} gives an overview of TCPLS and how it supports these
 services. Finally, {{format}} describes the TCPLS in more details
 and the TLS Extensions introduced in this document.
+
 
 
 # Conventions and Definitions
@@ -697,5 +710,5 @@ This work has been partially supported by the ``Programme de
 recherche d'interet général WALINNOV - MQUIC project (convention number
 1810018)'' and European Union through the NGI Pointer programme for the TCPLS
 project (Horizon 2020 Framework Programme, Grant agreement number 871528).
-The authors thank Quentin De Coninck and Louis Navarre for his
+The authors thank Quentin De Coninck and Louis Navarre for their
 comments on the first version of this draft.
