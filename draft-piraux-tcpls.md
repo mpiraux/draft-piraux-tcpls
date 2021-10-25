@@ -468,6 +468,8 @@ The table below indicates the TLS messages where these extensions can appear.
 |:-----------|:---------------------|
 | tcpls      | CH, EE               |
 | tcpls_join | CH                   |
+{: #tcpls-tls-extensions-allowed-tls-messages title="TLS messages allowed
+to carry TCPLS TLS Extensions"}
 
 
 ### TCPLS
