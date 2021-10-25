@@ -584,8 +584,8 @@ a particular TCP connection of the TCPLS session. Although the reliability
 of the data exchange on a connection is handled by TCP, there are situations
 such as the failure of a TCP connection where a sender does not know whether the
 TLS frames that it sent have been correctly received by the peer. The ACK frame
-allows a TCPLS receiver to indicate the highest TLS record sequence number 
-received on aspecific connection. The ACK frame can be sent over any TCP 
+allows a TCPLS receiver to indicate the highest TLS record sequence number
+received on aspecific connection. The ACK frame can be sent over any TCP
 connection of a TCPLS session.
 
 ~~~
@@ -605,7 +605,7 @@ acknowledgment was sent.
 Highest Record Sequence Received:
 
 : A 64-bit unsigned integer indicating the highest TLS record sequence
-number received on this TCP connection.
+number received on the connection indicated by the Connection ID.
 
 ### New Token frame
 
@@ -633,17 +633,12 @@ Token:
 ### Connection Reset frame
 
 This frame is used by the receiver to inform the sender that a TCP
-connection has been reset. The frame has a per-connection sequence
-to distinguish new signals from delayed ones. Each endpoint keeps track of
-the largest sequence number received for each connection. When receiving a
-Connection Reset frame that does not increase the largest sequence number
-of its connection, the endpoint MUST ignore the frame.
+connection has been reset.
 
 ~~~
 Connection Reset frame {
     Type (8) = 0x06,
-    Connection ID (32),
-    Sequence (8),
+    Connection ID (32)
 }
 ~~~
 {: #connection-failed-format title="Connection Reset format"}
@@ -652,10 +647,6 @@ Connection ID:
 
 : A 32-bit unsigned integer indicating the ID of the connection that failed.
 
-Sequence:
-
-: A 8-bit unsigned integer encoding the sequence number of Connection Reset
-frame sent for the Connection ID.
 
 # Security Considerations
 
