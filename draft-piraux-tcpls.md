@@ -436,8 +436,8 @@ versions of this document.
 ## TCPLS TLS Extensions
 
 This document specifies two TLS extensions used by TCPLS. The first,
-tcpls, is used to announce the support of TCPLS. The second,
-tcpls_join, is used to join a TCP connection to a TCPLS session. Their types
+"tcpls", is used to announce the support of TCPLS. The second,
+"tcpls_join", is used to join a TCP connection to a TCPLS session. Their types
 are defined as follows.
 
 ~~~
@@ -466,13 +466,13 @@ struct {
 The "tcpls_join" extension is used by the client to join the TCP connection
 on which it is sent to a TCPLS session. The extension contains a Token
 provided by the server. The client MUST NOT send more than one
-tcpls_join extension in its ClientHello. When receiving a ClientHello with
+"tcpls_join" extension in its ClientHello. When receiving a ClientHello with
 this extension, the server checks that the token is valid and joins the TCP
 connection to the corresponding TCPLS session. When the token is not valid,
 the server MUST abort the handshake with an illegal_parameter alert.
 
 By controlling the amount of tokens given to the client, the server can
-control the number of active TCP connections of a session. The server SHOULD
+control the number of active TCP connections of a TCPLS session. The server SHOULD
 replenish the tokens when TCP connections are removed from the TCPLS session.
 
 ## TCPLS Frames
@@ -498,8 +498,8 @@ regarding certain frames.
 
 N:
 
-: Non-ack-eliciting. Receiving this frame does not elicit the sending of an
-acknowledgment.
+: Non-ack-eliciting. Receiving this frame does not elicit the sending of a
+TCPLS acknowledgment.
 
 S:
 
@@ -551,7 +551,7 @@ Stream frame {
 FIN:
 
 : The last bit of the frame type bit indicates that this Stream frame
-ends the stream when its value is 1. The end of the stream is at the sum of the
+ends the stream when its value is 1. The last byte of the stream is at the sum of the
 Offset and Length fields of this frame.
 
 Stream ID:
@@ -572,7 +572,12 @@ Length:
 
 This frame is sent by the receiver to acknowledge the receipt of TLS records on
 a particular TCP connection of the TCPLS session. Although the reliability
-of the data exchange on a connection is handled by TCP,
+of the data exchange on a connection is handled by TCP, there are situations
+such as the failure of a TCP connection where a sender does not know whether the
+TLS frames that it sent have been correctly received by the peer. The ACK frame
+allows a TCPLS receiver to indicate the highest TLS record sequence number 
+received on aspecific connection. The ACK frame can be sent over any TCP 
+connection of a TCPLS session.
 
 ~~~
 ACK frame {
@@ -649,6 +654,7 @@ When issuing tokens to the client as presented in {{joining-tcp-connections}},
 the server SHOULD ensure that their values appear as random to observers and
 cannot be correlated together for a given TCPLS session.
 
+The security considerations for TLS apply to TCPLS.
 The next versions of this document will elaborate on other security
 considerations following the guidelines of {{RFC3552}}.
 
@@ -687,6 +693,9 @@ the "Rules" column.
 # Acknowledgments
 {:numbered="false"}
 
-This work has been partially supported by the MQUIC project and the NGI
-POINTER work programme. The authors thank Quentin De Coninck for his
+This work has been partially supported by the ``Programme de
+recherche d'interet général WALINNOV - MQUIC project (convention number
+1810018)'' and European Union through the NGI Pointer programme for the TCPLS
+project (Horizon 2020 Framework Programme, Grant agreement number 871528).
+The authors thank Quentin De Coninck and Louis Navarre for his
 comments on the first version of this draft.
