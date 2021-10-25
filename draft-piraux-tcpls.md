@@ -172,7 +172,7 @@ a single bytestream in each direction.
 Some TCP applications such as HTTP/2 {{RFC7540}} use multiple
 streams, but these are mapped to a single TCP connection which leads
 to Head-of-Line (HoL) blocking when packet losses occur. SCTP {{RFC4960}}
-supports multiple truly-concurrent streams and QUIC adopted a similar 
+supports multiple truly-concurrent streams and QUIC adopted a similar
 approach to prevent HoL blocking.
 
 Modern transport services also changed the utilization of the underlying network.
