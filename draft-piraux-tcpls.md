@@ -240,22 +240,25 @@ leverages TLS records in a different way. TCPLS defines its own framing
 mechanism that allows encoding both application data and control information.
 A TCPLS frame is the basic unit of information for TCPLS. One or more
 TCPLS frames can be placed inside a TLS record. A TCPLS frame always fits in
-a single record. This TLS record is then reliably transported by a TCP
-connection. {{fig-tcpls-frames}} illustrates the relationship
-between TCPLS frames and TLS records.
+a single record. We have however 2 constraints on framing: 1) only one frame
+containing TCPLS Data can be packaged into a given record. 2) Any number of
+TCPLS Control can be packaged, but they always need to come after a TCPLS Data
+frame if any TCPLS Data is present in the record.  This TLS record is then
+reliably transported by a TCP connection. {{fig-tcpls-frames}} illustrates the
+relationship between TCPLS frames and TLS records.
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  TCPLS Data     TCP Control   TCPLS Data     TCPLS Data
-  abcdef         0010010       ghijkl         mnopq...
-  <--------->   <----------->  <--------->   <------------>
- /                                        /
-/                                      /
-|                                   /
-|                                /
-|                             /
+  TCPLS Data     TCP Control      TCPLS Data
+  abcdef         0010010          mnopq...
+  <--------->   <----------->    <------------>
+ /                             /
+/                            /
 |                          /
-|                       /
-|                   /
+|                        /
+|                      /
+|                    /
+|                  /
+|                 /
 +----------------+     +-----------------+
 |   TLS record n |     | TLS record n+1  |  ....
 +----------------+     +-----------------+
