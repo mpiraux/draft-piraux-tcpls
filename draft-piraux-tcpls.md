@@ -41,6 +41,7 @@ informative:
   RFC8684:
   RFC9000:
   RFC7540:
+  RFC3552:
   I-D.ietf-tls-dtls13:
 
 
@@ -172,7 +173,7 @@ a single bytestream in each direction.
 Some TCP applications such as HTTP/2 {{RFC7540}} use multiple
 streams, but these are mapped to a single TCP connection which leads
 to Head-of-Line (HoL) blocking when packet losses occur. SCTP {{RFC4960}}
-supports multiple truly-concurrent streams and QUIC adopted a similar 
+supports multiple truly-concurrent streams and QUIC adopted a similar
 approach to prevent HoL blocking.
 
 Modern transport services also changed the utilization of the underlying network.
@@ -345,10 +346,10 @@ and the data. The server advertises one or more tokens over this connection.
 Upon failure of the initial TCP connection, the client initiates a
 second TCP connection using the server-provided token.
 
-In both cases, some records sent by client or the server might be
+In both cases, some records sent by the client or the server might be
 in transit when the failure occurs. Some of these records could have been
 partially received but not yet delivered to the TCPLS layer when the
-underlying TCP connection fails. Other records could have already received,
+underlying TCP connection fails. Other records could have already been received,
 decrypted and data of their frames could have been delivered to the
 application. To prevent data losses and duplication, TCPLS includes its own
 acknowledgments.
@@ -431,7 +432,7 @@ enum {
 } ExtensionType;
 ~~~
 
-### TCPLS Hello
+### TCPLS
 
 The "tcpls" extension is used by the client and the server to announce
 their support of TCPLS. The extension contains no value. When it is present
@@ -561,7 +562,7 @@ of the data exchange on a connection is handled by TCP,
 ACK frame {
     Type (8) = 0x04,
     Connection ID (32),
-    Highest Sequence Received (64),
+    Highest Record Sequence Received (64),
 }
 ~~~
 {: #ack-frame-format title="ACK frame format"}
@@ -571,7 +572,7 @@ Connection ID:
 : A 32-bit unsigned integer indicating the TCP connection for which the
 acknowledgment was sent.
 
-Highest Sequence Received:
+Highest Record Sequence Received:
 
 : A 64-bit unsigned integer indicating the highest TLS record sequence
 number received on this TCP connection.
