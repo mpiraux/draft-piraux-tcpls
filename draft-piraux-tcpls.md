@@ -415,6 +415,22 @@ is protected with a unique nonce. As in TLS 1.3, the per-connection record
 sequence is implicit.
 
 
+## Closing a TCPLS session
+
+Endpoints notify their peers that they do not intend to send more data over
+a given TCPLS session by sending a TLS Alert "close_notify". The alert can
+be sent over one or more TCP connections of the session. The alert MUST be
+sent before closing the last TCP connection of the TCPLS session.
+The endpoint MAY close its side of the TCP connections after sending the alert.
+
+When all TCP connections of a session are closed and the TLS Alert
+"close_notify" was exchanged in both directions, the TCPLS session is
+considered as closed.
+
+We leave defining an abortful and idle session closure mechanisms for future
+versions of this document.
+
+
 # TCPLS Protocol {#format}
 
 ## TCPLS TLS Extensions
@@ -625,12 +641,16 @@ Connection ID:
 Sequence:
 
 : A 8-bit unsigned integer encoding the sequence number of Connection Reset
-frame sent for the connection.
+frame sent for the Connection ID.
 
 # Security Considerations
 
-TODO Security
+When issuing tokens to the client as presented in {{joining-tcp-connections}},
+the server SHOULD ensure that their values appear as random to observers and
+cannot be correlated together for a given TCPLS session.
 
+The next versions of this document will elaborate on other security
+considerations following the guidelines of {{RFC3552}}.
 
 # IANA Considerations
 
