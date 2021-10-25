@@ -448,6 +448,15 @@ enum {
 } ExtensionType;
 ~~~
 
+The table below indicates the TLS messages where these extensions can appear.
+"CH" indicates ClientHello while "EE" indicates EncryptedExtensions.
+
+| Extension  | Allowed TLS messages |
+|:-----------|:---------------------|
+| tcpls      | CH, EE               |
+| tcpls_join | CH                   |
+
+
 ### TCPLS
 
 The "tcpls" extension is used by the client and the server to announce
@@ -671,7 +680,7 @@ ExtensionType Values" registry.
 
 | Value | Extension Name | TLS 1.3 | Recommended | Reference     |
 |:------|:---------------|:--------|:------------|:--------------|
-| TBD1  | tcpls          | CH, SH  | N           | This document |
+| TBD1  | tcpls          | CH, EE  | N           | This document |
 | TBD2  | tcpls_join     | CH      | N           | This document |
 
 Note that "Recommended" is set to N as these extensions are intended for
