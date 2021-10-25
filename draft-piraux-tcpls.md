@@ -6,7 +6,7 @@ category: info
 
 ipr: trust200902
 area: Transport Area
-workgroup: TODO Working Group
+workgroup:
 keyword: Internet-Draft
 
 stand_alone: yes
