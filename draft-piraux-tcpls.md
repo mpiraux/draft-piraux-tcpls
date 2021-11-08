@@ -560,12 +560,12 @@ This frame is used to carry chunks of data of a given stream.
 
 ~~~
 Stream frame {
-    Type (7) = 0x01,
-    FIN (1),
-    Stream ID (32),
-    Offset (64),
-    Length (16),
     Stream Data (...),
+    Length (16),
+    Offset (64),
+    Stream ID (32),
+    FIN (1),
+    Type (7) = 0x01,
 }
 ~~~
 {: #stream-frame-format title="Stream frame format"}
@@ -603,9 +603,9 @@ connection of a TCPLS session.
 
 ~~~
 ACK frame {
-    Type (8) = 0x04,
-    Connection ID (32),
     Highest Record Sequence Received (64),
+    Connection ID (32),
+    Type (8) = 0x04,
 }
 ~~~
 {: #ack-frame-format title="ACK frame format"}
@@ -628,9 +628,9 @@ in {{joining-tcp-connections}}. Clients MUST NOT send New Token frames.
 
 ~~~
 New Token frame {
-    Type (8) = 0x05,
-    Sequence (8),
     Token (256),
+    Sequence (8),
+    Type (8) = 0x05,
 }
 ~~~
 {: #new-token-frame-format title="New Token frame format"}
@@ -650,8 +650,8 @@ connection has been reset.
 
 ~~~
 Connection Reset frame {
-    Type (8) = 0x06,
     Connection ID (32)
+    Type (8) = 0x06,
 }
 ~~~
 {: #connection-failed-format title="Connection Reset format"}
