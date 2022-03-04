@@ -2,7 +2,7 @@
 title: "TCPLS: Modern Transport Services with TCP and TLS"
 abbrev: "TCPLS"
 docname: draft-piraux-tcpls-latest
-category: info
+category: exp
 
 ipr: trust200902
 area: Transport Area
