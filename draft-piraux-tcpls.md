@@ -23,9 +23,9 @@ author:
     organization: UCLouvain
     email: olivier.bonaventure@uclouvain.be
  -
-    name: Florentin Rochet
-    organization: University of Edinburgh
-    email: frochet@ed.ac.uk
+   name: Florentin Rochet
+   organization: University of Edinburgh
+   email: frochet@ed.ac.uk
 
 normative:
   RFC8446:
@@ -300,15 +300,21 @@ TCP connections. However, experience has shown that additional subflows are only
 established by the clients. TCPLS focuses on this deployment and only allows
 clients to create additional TCP connections.
 
-Using Multipath TCP, a client can try to establish a new TCP connection at
+Using Multipath TCP, a client can try establishing a new TCP connection at
 any time. If a server wishes to restrict the number of TCP connections that
 correspond to one Multipath TCP connection, it has to respond with RST to
-the in excess connection attempts. TCPLS takes another approach. To control
-the number of connections that a client can establish, a TCPLS server
-supplies unique tokens. A client includes one of the server supplied tokens
-when it attaches a new TCP connection to a TCPLS session. Each token can
-only be used once, hence limiting the amount of additional TCP connections.
+the in excess connection attempts.
 
+TCPLS takes another approach. To control the number of connections that a
+client can establish, a TCPLS server supplies unique tokens. A client includes
+one of the server supplied tokens when it attaches a new TCP connection to a
+TCPLS session. Each token can only be used once, hence limiting the amount of
+additional TCP connections.
+
+TCPLS endpoints can advertise their local addresses, allowing new TCP
+connections for a given TCPLS session to be established between new pairs of
+addresses. When an endpoint is no more willing new TCP connections to use one
+of its advertised addresses, it can remove this addresss from the TCPLS session.
 
 ### Joining TCP connections
 
@@ -385,7 +391,7 @@ When an endpoint abortfully closes a TCP connection, its peer leverages the
 acknowlegments to retransmit the TLS records that were not acknowlegded.
 
 
-### Multipath transport
+### Multipath
 
 TCPLS also supports the utilization of different TCP connections, over
 different paths or interfaces, to improve throughput or spread stream frames
@@ -514,7 +520,9 @@ specified in this document.
 | 0x02-0x03  | Stream            |       | {{stream-frame}}            |
 | 0x04       | ACK               | N     | {{ack-frame}}               |
 | 0x05       | New Token         |  S    | {{new-token-frame}}         |
-| 0x06       | Connection Reset  |       | {{connection-reset-frame}} |
+| 0x06       | Connection Reset  |       | {{connection-reset-frame}}  |
+| 0x07       | New Address       |       | {{new-address-frame}}       |
+| 0x08       | Remove Address    |       | {{remove-address-frame}}    |
 {: #tcpls-frame-types title="TCPLS frames"}
 
 The "Rules" column in {{tcpls-frame-types}} indicates special requirements
@@ -656,12 +664,74 @@ Connection Reset frame {
     Connection ID (32)
 }
 ~~~
-{: #connection-failed-format title="Connection Reset format"}
+{: #connection-reset-format title="Connection Reset format"}
 
 Connection ID:
 
 : A 32-bit unsigned integer indicating the ID of the connection that failed.
 
+### New Address frame
+
+This frame is used by an endpoint to add a new local address to the TCPLS
+session. This address can then be used to establish new TCP connections.
+The server advertises addresses that the client can use as destination when
+adding TCP connections. The client advertises address that it can use as source
+when adding TCP connections.
+
+TODO: What happens when a valid connection is being established on non
+advertised addresses? For the client, it could be because of NAT. For the
+server, it MAY refuse the connection?
+
+~~~
+New Address frame {
+    Type (8) = 0x07,
+    Address ID (8),
+    Address Version (8),
+    Address (..),
+    Port (16),
+}
+~~~
+{: #new-address-format title="New Address format"}
+
+Address ID:
+
+: A 8-bit identifier for this address. For a given Address ID, an endpoint
+receiving a frame with a content that differs from previously received frames
+MUST ignore the frame. An endpoint receiving a frame for an Address ID that was
+previously removed MUST ignore the frame.
+
+Address Version:
+
+: A 8-bit value identifying the Internet address version of this address. The
+number 4 indicates IPv4 while 6 indicates IPv6.
+
+Address:
+
+: The address value. Its size depends on its version. IPv4 addresses are 32-bit
+long while IPv6 addresses are 128-bit long.
+
+Port:
+
+: A 16-bit value indicating the TCP port used with this address.
+
+### Remove Address frame
+
+This frame is used by an endpoint to announce that it is not willing to use a
+given address to establish new TCP connections. After receiving this frame, a
+client MUST NOT establish new TCP connections to the given address.
+
+~~~
+Remove Address frame {
+    Type (8) = 0x08,
+    Address ID (8),
+}
+~~~
+{: #remove-address-format title="Remove Address format"}
+
+Address ID:
+
+: A 8-bit identifier for the address to remove. An endpoint receiving a frame
+for an address that was inexistent or already removed MUST ignore the frame.
 
 # Security Considerations
 
@@ -714,3 +784,12 @@ recherche d'interet général WALINNOV - MQUIC project (convention number
 project (Horizon 2020 Framework Programme, Grant agreement number 871528).
 The authors thank Quentin De Coninck and Louis Navarre for their
 comments on the first version of this draft.
+
+# Change log
+{:numbered="false"}
+
+## Since draft-piraux-tcpls-00
+{:numbered="false"}
+
+* Added the addresses exchange mechanism with New Address and Remove Address
+frames.
