@@ -52,7 +52,7 @@ informative:
      - ins: B. Donnet
      - ins: O. Bonaventure
     title: TCPLS - Modern Transport Services with TCP and TLS
-    seriesinfo: Proceedings of the The 17th International Conference on emerging Networking EXperiments and Technologies (CoNEXT'21)
+    seriesinfo: Proceedings of the 17th International Conference on emerging Networking EXperiments and Technologies (CoNEXT'21)
     date: December 2021
 
 
@@ -169,6 +169,13 @@ and the TLS Extensions introduced in this document.
 
 {::boilerplate bcp14-tagged}
 
+## Notational conventions
+
+This document uses the same conventions as defined in Section 1.3 of
+{{RFC9000}}.
+
+This document uses network byte order (that is, big endian) values.
+Fields are placed starting from the high-order bits of each byte.
 
 # Modern Transport Services {#services}
 
@@ -236,7 +243,7 @@ Client                                   Server
 TCP/TLS offers a single encrypted bytestream service to the application. To
 achieve this, TLS records are used to encrypt and secure chunks of the
 application bytestream and are then sent through the TCP bytestream. TCPLS
-leverages TLS records in a different way. TCPLS defines its own framing
+leverages TLS records in a differently. TCPLS defines its own framing
 mechanism that allows encoding both application data and control information.
 A TCPLS frame is the basic unit of information for TCPLS. One or more
 TCPLS frames can be placed inside a TLS record. A TCPLS frame always fits in
@@ -314,7 +321,7 @@ additional TCP connections.
 TCPLS endpoints can advertise their local addresses, allowing new TCP
 connections for a given TCPLS session to be established between new pairs of
 addresses. When an endpoint is no more willing new TCP connections to use one
-of its advertised addresses, it can remove this addresss from the TCPLS session.
+of its advertised addresses, it can remove this address from the TCPLS session.
 
 ### Joining TCP connections
 
@@ -608,7 +615,7 @@ of the data exchange on a connection is handled by TCP, there are situations
 such as the failure of a TCP connection where a sender does not know whether the
 TLS frames that it sent have been correctly received by the peer. The ACK frame
 allows a TCPLS receiver to indicate the highest TLS record sequence number
-received on aspecific connection. The ACK frame can be sent over any TCP
+received on a specific connection. The ACK frame can be sent over any TCP
 connection of a TCPLS session.
 
 ~~~
@@ -678,10 +685,6 @@ The server advertises addresses that the client can use as destination when
 adding TCP connections. The client advertises address that it can use as source
 when adding TCP connections.
 
-TODO: What happens when a valid connection is being established on non
-advertised addresses? For the client, it could be because of NAT. For the
-server, it MAY refuse the connection?
-
 ~~~
 New Address frame {
     Type (8) = 0x07,
@@ -718,7 +721,9 @@ Port:
 
 This frame is used by an endpoint to announce that it is not willing to use a
 given address to establish new TCP connections. After receiving this frame, a
-client MUST NOT establish new TCP connections to the given address.
+client MUST NOT establish new TCP connections to the given address. After
+receiving this frame, an endpoint MUST close all TCP connections using the
+given address.
 
 ~~~
 Remove Address frame {
@@ -731,7 +736,7 @@ Remove Address frame {
 Address ID:
 
 : A 8-bit identifier for the address to remove. An endpoint receiving a frame
-for an address that was inexistent or already removed MUST ignore the frame.
+for an address that was nonexistent or already removed MUST ignore the frame.
 
 # Security Considerations
 
