@@ -243,7 +243,7 @@ Client                                   Server
 TCP/TLS offers a single encrypted bytestream service to the application. To
 achieve this, TLS records are used to encrypt and secure chunks of the
 application bytestream and are then sent through the TCP bytestream. TCPLS
-leverages TLS records in a differently. TCPLS defines its own framing
+leverages TLS records differently. TCPLS defines its own framing
 mechanism that allows encoding both application data and control information.
 A TCPLS frame is the basic unit of information for TCPLS. One or more
 TCPLS frames can be placed inside a TLS record. A TCPLS frame always fits in
