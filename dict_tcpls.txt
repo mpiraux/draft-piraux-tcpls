@@ -214,3 +214,17 @@ VPN
 VPNs
 web-based
 workgroup
+WALINNOV
+programme
+Programme
+général
+interet
+endian
+Notational
+Assogba
+Edeline
+Donnet
+tcpls-tls-extensions-allowed-tls-messages
+close_notify
+acknowlegments
+acknowlegded
