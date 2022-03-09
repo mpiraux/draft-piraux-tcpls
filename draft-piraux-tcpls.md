@@ -23,9 +23,9 @@ author:
     organization: UCLouvain
     email: olivier.bonaventure@uclouvain.be
  -
-   name: Florentin Rochet
-   organization: University of Edinburgh
-   email: frochet@ed.ac.uk
+    name: Florentin Rochet
+    organization: University of Edinburgh
+    email: frochet@ed.ac.uk
 
 normative:
   RFC8446:
@@ -690,11 +690,11 @@ when adding TCP connections.
 
 ~~~
 New Address frame {
-    Type (8) = 0x07,
-    Address ID (8),
-    Address Version (8),
-    Address (..),
     Port (16),
+    Address (..),
+    Address Version (8),
+    Address ID (8),
+    Type (8) = 0x07,
 }
 ~~~
 {: #new-address-format title="New Address format"}
@@ -730,8 +730,8 @@ given address.
 
 ~~~
 Remove Address frame {
-    Type (8) = 0x08,
     Address ID (8),
+    Type (8) = 0x08,
 }
 ~~~
 {: #remove-address-format title="Remove Address format"}
@@ -801,3 +801,4 @@ comments on the first version of this draft.
 
 * Added the addresses exchange mechanism with New Address and Remove Address
 frames.
+* Change framing element ordering and add constraints on framing to enable zero-copy receiver.
