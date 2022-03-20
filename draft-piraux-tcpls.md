@@ -246,13 +246,11 @@ application bytestream and are then sent through the TCP bytestream. TCPLS
 leverages TLS records differently. TCPLS defines its own framing
 mechanism that allows encoding both application data and control information.
 A TCPLS frame is the basic unit of information for TCPLS. One or more
-TCPLS frames can be placed inside a TLS record. A TCPLS frame always fits in
-a single record. We have however two constraints on framing: 1) only one frame
-containing TCPLS Data can be packaged into a given record. 2) Any number of
-TCPLS Control frames can be packaged, but they always need to come after a TCPLS Data
-frame if any TCPLS Data is present in the record.  This TLS record is then
-reliably transported by a TCP connection. {{fig-tcpls-frames}} illustrates the
-relationship between TCPLS frames and TLS records.
+TCPLS frames containing Data or Control information can be placed inside
+a TLS record. A TCPLS frame always fits in a single record.  This TLS
+record is then reliably transported by a TCP connection.
+{{fig-tcpls-frames}} illustrates the relationship between TCPLS frames
+and TLS records.
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
   TCPLS Data     TCP Control      TCPLS Data
@@ -289,6 +287,9 @@ next one.
 Data is exchanged using Stream frames whose format is
 described in {{stream-frame}}. Each Stream frame carries a chunk of data of
 a given stream. Applications can mark the end of a stream to close it.
+
+TCPLS offers an equivalent of TLS 1.3's zero-copy with per-stream
+receiving buffers at no extra cost.
 
 Similarly to HTTP/2 {{RFC7540}}, conveying several streams on a single TCP
 connection introduces Head-of-Line (HoL) blocking between the streams. To
@@ -459,6 +460,30 @@ considered as closed.
 We leave defining an abortful and idle session closure mechanisms for future
 versions of this document.
 
+## Sender's Role for a Zero-Copy Receiver
+
+TCPLS's design provides a path to achieve a zero-copy receiver or
+partial zero-copy under several conditions. If the conditions are met,
+then the Data can be decrypted at the right place in the application
+buffer(s). First, Data zero-copy requires the packets to arrive in order.
+In a Multipath setting, it implies partial zero-copy: ordered packets
+may be decrypted in-place.  Non-ordered packets would need to be copied
+after decryption.  Intelligence in the Multipath scheduling algorithm
+may target the minimization of unordered packets. Second, packetization
+of frames is impactful. The sender SHOULD packetize a single Stream Data
+frame per record, potentially followed by as many Control frames as
+needed. If the sender packetizes at least one Stream Data frame and one
+Stream Control frame, the first frame in the record MUST be the Data
+frame.  In case the sender packetizes multiple Stream Data frames, the
+first Stream frame of the record SHOULD be the largest to minimize the
+size of the copied content at the receiver. The other frames in the
+record may either be Data or Control information. In case mutiple Stream
+Data frames are included in a record, they SHOULD belong to a different
+stream.  Third, zero-copy requires the receiver to process the frames
+from a record in reverse order, from the end of the record to the
+beginning.  The following TCPLS Protocol specification accounts for
+reverse-order processing by setting the Type value as the last element
+for each frame specified.
 
 # TCPLS Protocol {#format}
 
@@ -466,8 +491,8 @@ versions of this document.
 
 This document specifies two TLS extensions used by TCPLS. The first,
 "tcpls", is used to announce the support of TCPLS. The second,
-"tcpls_join", is used to join a TCP connection to a TCPLS session. Their types
-are defined as follows.
+"tcpls_join", is used to join a TCP connection to a TCPLS session. Their
+types are defined as follows.
 
 ~~~
 enum {
