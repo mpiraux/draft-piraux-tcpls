@@ -288,7 +288,7 @@ Data is exchanged using Stream frames whose format is
 described in {{stream-frame}}. Each Stream frame carries a chunk of data of
 a given stream. Applications can mark the end of a stream to close it.
 
-TCPLS offers an equivalent of TLS 1.3's zero-copy with per-stream
+TCPLS enables the receiver to decrypt and process TLS records in
 receiving buffers at no extra cost.
 
 Similarly to HTTP/2 {{RFC7540}}, conveying several streams on a single TCP
