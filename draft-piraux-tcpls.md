@@ -287,8 +287,9 @@ Data is exchanged using Stream frames whose format is
 described in {{stream-frame}}. Each Stream frame carries a chunk of data of
 a given stream. Applications can mark the end of a stream to close it.
 
-TCPLS offers an equivalent of TLS 1.3's zero-copy with per-stream
-receiving buffers at no extra cost.
+TCPLS enables the receiver to decrypt and process TLS records in
+zero copy similarly to TLS 1.3 under circumstances discussed in 
+{{zero-copy-receive-path}}.
 
 Similarly to HTTP/2 {{RFC7540}}, conveying several streams on a single TCP
 connection introduces Head-of-Line (HoL) blocking between the streams. To
@@ -459,7 +460,7 @@ considered as closed.
 We leave defining an abortful and idle session closure mechanisms for future
 versions of this document.
 
-## Sender's Role for a Zero-Copy Receiver
+## Zero-Copy Receive Path
 
 TCPLS's design provides a path to achieve a zero-copy receiver or
 partial zero-copy under several conditions. If the conditions are met,
