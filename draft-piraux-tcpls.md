@@ -289,7 +289,8 @@ described in {{stream-frame}}. Each Stream frame carries a chunk of data of
 a given stream. Applications can mark the end of a stream to close it.
 
 TCPLS enables the receiver to decrypt and process TLS records in
-receiving buffers at no extra cost.
+zero copy similarly to TLS 1.3 under circumstances discussed in 
+{{zero-copy-receive-path}}.
 
 Similarly to HTTP/2 {{RFC7540}}, conveying several streams on a single TCP
 connection introduces Head-of-Line (HoL) blocking between the streams. To
