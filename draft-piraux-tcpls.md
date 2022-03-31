@@ -461,7 +461,7 @@ considered as closed.
 We leave defining an abortful and idle session closure mechanisms for future
 versions of this document.
 
-## Sender's Role for a Zero-Copy Receiver
+## Zero-Copy Receive Path
 
 TCPLS's design provides a path to achieve a zero-copy receiver or
 partial zero-copy under several conditions. If the conditions are met,
