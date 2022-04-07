@@ -477,7 +477,7 @@ Stream Control frame, the first frame in the record MUST be the Data
 frame.  In case the sender packetizes multiple Stream Data frames, the
 first Stream frame of the record SHOULD be the largest to minimize the
 size of the copied content at the receiver. The other frames in the
-record may either be Data or Control information. In case mutiple Stream
+record may either be Data or Control information. When multiple Stream
 Data frames are included in a record, they SHOULD belong to a different
 stream.  Third, zero-copy requires the receiver to process the frames
 from a record in reverse order, from the end of the record to the
