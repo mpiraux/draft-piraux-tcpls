@@ -244,20 +244,20 @@ TCP/TLS offers a single encrypted bytestream service to the application.
 To achieve this, TLS records are used to encrypt and secure chunks of
 the application bytestream and are then sent through the TCP bytestream.
 TCPLS leverages TLS records differently. TCPLS defines its own framing
-mechanism and encoding that allows one or more TCPLS frames containing
-application data and control information.  A TCPLS frame is the basic
-unit of information for TCPLS. A TCPLS frame always fits in a single
-record.  This TLS record is then reliably transported by a TCP
-connection.  {{fig-tcpls-frames}} illustrates the relationship between
+that allows encoding application data and control information. A TCPLS frame
+is the basic unit of information for TCPLS. A TCPLS frame always fits in a
+single record. One or more TCPLS frames can be encoded in a TLS record.
+This TLS record is then reliably transported by a TCP connection.
+{{fig-tcpls-frames}} illustrates the relationship between
 TCPLS frames and TLS records.
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
   TCPLS Data     TCP Control      TCPLS Data
   abcdef         0010010          mnopq...
   <--------->   <----------->    <------------>
- /                             /
-/                            /
-|                          /
+ /                          /
+/                          /
+|                         /
 |                        /
 |                      /
 |                    /
@@ -267,7 +267,7 @@ TCPLS frames and TLS records.
 |   TLS record n |     | TLS record n+1  |  ....
 +----------------+     +-----------------+
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
-{: #fig-tcpls-frames title="The first TLS record contains three TCPLS frames"}
+{: #fig-tcpls-frames title="The first TLS record contains two TCPLS frames"}
 
 
 ## Multiple Streams
@@ -288,7 +288,7 @@ described in {{stream-frame}}. Each Stream frame carries a chunk of data of
 a given stream. Applications can mark the end of a stream to close it.
 
 TCPLS enables the receiver to decrypt and process TLS records in
-zero copy similarly to TLS 1.3 under circumstances discussed in 
+zero copy similarly to TLS 1.3 under circumstances discussed in
 {{zero-copy-receive-path}}.
 
 Similarly to HTTP/2 {{RFC7540}}, conveying several streams on a single TCP
@@ -462,28 +462,24 @@ versions of this document.
 
 ## Zero-Copy Receive Path
 
-TCPLS's design provides a path to achieve a zero-copy receiver or
-partial zero-copy under several conditions. If the conditions are met,
-then the Data can be decrypted at the right place in the application
-buffer(s). First, Data zero-copy requires the packets to arrive in order.
-In a Multipath setting, it implies partial zero-copy: ordered packets
-may be decrypted in-place.  Non-ordered packets would need to be copied
-after decryption.  Intelligence in the Multipath scheduling algorithm
-may target the minimization of unordered packets. Second, packetization
-of frames is impactful. The sender SHOULD packetize a single Stream Data
-frame per record, potentially followed by as many Control frames as
-needed. If the sender packetizes at least one Stream Data frame and one
-Stream Control frame, the first frame in the record MUST be the Data
-frame.  In case the sender packetizes multiple Stream Data frames, the
-first Stream frame of the record SHOULD be the largest to minimize the
-size of the copied content at the receiver. The other frames in the
-record may either be Data or Control information. When multiple Stream
-Data frames are included in a record, they SHOULD belong to a different
-stream.  Third, zero-copy requires the receiver to process the frames
-from a record in reverse order, from the end of the record to the
-beginning.  The following TCPLS Protocol specification accounts for
-reverse-order processing by setting the Type value as the last element
-for each frame specified.
+TCPLS enables the receiver to process TLS records in a zero-copy manner
+under several conditions. When they are met, the application data carried
+in TCPLS frames can be decrypted at the right place in the application
+buffers.
+
+First, zero-copy can be achieved when Stream frames of a given stream
+arrive in order. When using several TCP connections, out-of-order Stream frames
+cannot be processed in zero copy. A Multipath scheduling algorithm
+may target the minimization of out-of-order packets.
+
+Second, the composition
+of TCPLS frames in a TLS record is impactful. The sender SHOULD encode a
+single Stream Data frame as the first frame of the record, followed by
+control-related frames if needed.
+When the sender encodes several Stream frames, the first frame of the record
+SHOULD be the largest, in order to maximise the use of zero copy.
+When several Stream frames are included in a record, they SHOULD belong to a
+different stream.
 
 # TCPLS Protocol {#format}
 
@@ -543,10 +539,12 @@ replenish the tokens when TCP connections are removed from the TCPLS session.
 ## TCPLS Frames
 
 TCPLS uses TLS Application Data records to exchange TCPLS frames. After
-decryption, the record payload consists of a sequence of TCPLS frames. A
-frame is a Type-Value unit, starting with a byte indicating its frame type
-followed by type-specific fields. {{tcpls-frame-types}} lists the frames
-specified in this document.
+decryption, the record payload consists of a sequence of TCPLS frames. The
+receiver process the frames starting from the last one to the first one.
+A frame is a Value-Type unit. It starts with type-specific fields and ends
+with a byte indicating its frame type. The receiver process a TCPLS frame
+starting from its end towards its beginning. {{tcpls-frame-types}} lists the
+frames specified in this document.
 
 | Type value | Frame name        | Rules | Definition                  |
 |:-----------|:------------------|:------|:----------------------------|
@@ -826,4 +824,4 @@ comments on the first version of this draft.
 
 * Added the addresses exchange mechanism with New Address and Remove Address
 frames.
-* Change framing element ordering and add constraints on framing to enable zero-copy receiver.
+* Change frames fields order and add constraints on framing to enable zero-copy receiver.
