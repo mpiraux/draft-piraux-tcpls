@@ -24,8 +24,8 @@ author:
     email: olivier.bonaventure@uclouvain.be
  -
    name: Florentin Rochet
-   organization: University of Edinburgh
-   email: frochet@ed.ac.uk
+   organization: University of Namur
+   email: florentin.rochet@unamur.be
 
 normative:
   RFC8446:
