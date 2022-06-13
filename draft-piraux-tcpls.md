@@ -240,34 +240,34 @@ Client                                   Server
 {: #fig-overview-handshake title="Starting a TCPLS session"}
 
 
-TCP/TLS offers a single encrypted bytestream service to the application. To
-achieve this, TLS records are used to encrypt and secure chunks of the
-application bytestream and are then sent through the TCP bytestream. TCPLS
-leverages TLS records differently. TCPLS defines its own framing
-mechanism that allows encoding both application data and control information.
-A TCPLS frame is the basic unit of information for TCPLS. One or more
-TCPLS frames can be placed inside a TLS record. A TCPLS frame always fits in
-a single record. This TLS record is then reliably transported by a TCP
-connection. {{fig-tcpls-frames}} illustrates the relationship
-between TCPLS frames and TLS records.
+TCP/TLS offers a single encrypted bytestream service to the application.
+To achieve this, TLS records are used to encrypt and secure chunks of
+the application bytestream and are then sent through the TCP bytestream.
+TCPLS leverages TLS records differently. TCPLS defines its own framing
+that allows encoding application data and control information. A TCPLS frame
+is the basic unit of information for TCPLS. A TCPLS frame always fits in a
+single record. One or more TCPLS frames can be encoded in a TLS record.
+This TLS record is then reliably transported by a TCP connection.
+{{fig-tcpls-frames}} illustrates the relationship between
+TCPLS frames and TLS records.
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  TCPLS Data     TCP Control   TCPLS Data     TCPLS Data
-  abcdef         0010010       ghijkl         mnopq...
-  <--------->   <----------->  <--------->   <------------>
- /                                        /
-/                                      /
-|                                   /
-|                                /
-|                             /
-|                          /
-|                       /
-|                   /
+  TCPLS Data     TCP Control      TCPLS Data
+  abcdef         0010010          mnopq...
+  <--------->   <----------->    <------------>
+ /                          /
+/                          /
+|                         /
+|                        /
+|                      /
+|                    /
+|                  /
+|                 /
 +----------------+     +-----------------+
 |   TLS record n |     | TLS record n+1  |  ....
 +----------------+     +-----------------+
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
-{: #fig-tcpls-frames title="The first TLS record contains three TCPLS frames"}
+{: #fig-tcpls-frames title="The first TLS record contains two TCPLS frames"}
 
 
 ## Multiple Streams
@@ -286,6 +286,10 @@ next one.
 Data is exchanged using Stream frames whose format is
 described in {{stream-frame}}. Each Stream frame carries a chunk of data of
 a given stream. Applications can mark the end of a stream to close it.
+
+TCPLS enables the receiver to decrypt and process TLS records in
+zero copy similarly to TLS 1.3 under circumstances discussed in
+{{zero-copy-receive-path}}.
 
 Similarly to HTTP/2 {{RFC7540}}, conveying several streams on a single TCP
 connection introduces Head-of-Line (HoL) blocking between the streams. To
@@ -456,6 +460,26 @@ considered as closed.
 We leave defining an abortful and idle session closure mechanisms for future
 versions of this document.
 
+## Zero-Copy Receive Path
+
+TCPLS enables the receiver to process TLS records in a zero-copy manner
+under several conditions. When they are met, the application data carried
+in TCPLS frames can be decrypted at the right place in the application
+buffers.
+
+First, zero-copy can be achieved when Stream frames of a given stream
+arrive in order. When using several TCP connections, out-of-order Stream frames
+cannot be processed in zero copy. A Multipath scheduling algorithm
+may target the minimization of out-of-order packets.
+
+Second, the composition
+of TCPLS frames in a TLS record is impactful. The sender SHOULD encode a
+single Stream Data frame as the first frame of the record, followed by
+control-related frames if needed.
+When the sender encodes several Stream frames, the first frame of the record
+SHOULD be the largest, in order to maximise the use of zero copy.
+When several Stream frames are included in a record, they SHOULD belong to a
+different stream.
 
 # TCPLS Protocol {#format}
 
@@ -463,8 +487,8 @@ versions of this document.
 
 This document specifies two TLS extensions used by TCPLS. The first,
 "tcpls", is used to announce the support of TCPLS. The second,
-"tcpls_join", is used to join a TCP connection to a TCPLS session. Their types
-are defined as follows.
+"tcpls_join", is used to join a TCP connection to a TCPLS session. Their
+types are defined as follows.
 
 ~~~
 enum {
@@ -515,10 +539,12 @@ replenish the tokens when TCP connections are removed from the TCPLS session.
 ## TCPLS Frames
 
 TCPLS uses TLS Application Data records to exchange TCPLS frames. After
-decryption, the record payload consists of a sequence of TCPLS frames. A
-frame is a Type-Value unit, starting with a byte indicating its frame type
-followed by type-specific fields. {{tcpls-frame-types}} lists the frames
-specified in this document.
+decryption, the record payload consists of a sequence of TCPLS frames. The
+receiver process the frames starting from the last one to the first one.
+A frame is a Value-Type unit. It starts with type-specific fields and ends
+with a byte indicating its frame type. The receiver process a TCPLS frame
+starting from its end towards its beginning. {{tcpls-frame-types}} lists the
+frames specified in this document.
 
 | Type value | Frame name        | Rules | Definition                  |
 |:-----------|:------------------|:------|:----------------------------|
@@ -577,12 +603,12 @@ This frame is used to carry chunks of data of a given stream.
 
 ~~~
 Stream frame {
-    Type (7) = 0x01,
-    FIN (1),
-    Stream ID (32),
-    Offset (64),
-    Length (16),
     Stream Data (...),
+    Length (16),
+    Offset (64),
+    Stream ID (32),
+    FIN (1),
+    Type (7) = 0x01,
 }
 ~~~
 {: #stream-frame-format title="Stream frame format"}
@@ -620,9 +646,9 @@ connection of a TCPLS session.
 
 ~~~
 ACK frame {
-    Type (8) = 0x04,
-    Connection ID (32),
     Highest Record Sequence Received (64),
+    Connection ID (32),
+    Type (8) = 0x04,
 }
 ~~~
 {: #ack-frame-format title="ACK frame format"}
@@ -645,9 +671,9 @@ in {{joining-tcp-connections}}. Clients MUST NOT send New Token frames.
 
 ~~~
 New Token frame {
-    Type (8) = 0x05,
-    Sequence (8),
     Token (256),
+    Sequence (8),
+    Type (8) = 0x05,
 }
 ~~~
 {: #new-token-frame-format title="New Token frame format"}
@@ -667,8 +693,8 @@ connection has been reset.
 
 ~~~
 Connection Reset frame {
-    Type (8) = 0x06,
     Connection ID (32)
+    Type (8) = 0x06,
 }
 ~~~
 {: #connection-reset-format title="Connection Reset format"}
@@ -687,11 +713,11 @@ when adding TCP connections.
 
 ~~~
 New Address frame {
-    Type (8) = 0x07,
-    Address ID (8),
-    Address Version (8),
-    Address (..),
     Port (16),
+    Address (..),
+    Address Version (8),
+    Address ID (8),
+    Type (8) = 0x07,
 }
 ~~~
 {: #new-address-format title="New Address format"}
@@ -727,8 +753,8 @@ given address.
 
 ~~~
 Remove Address frame {
-    Type (8) = 0x08,
     Address ID (8),
+    Type (8) = 0x08,
 }
 ~~~
 {: #remove-address-format title="Remove Address format"}
@@ -798,3 +824,4 @@ comments on the first version of this draft.
 
 * Added the addresses exchange mechanism with New Address and Remove Address
 frames.
+* Change frames fields order and add constraints on framing to enable zero-copy receiver.
