@@ -556,6 +556,7 @@ frames specified in this document.
 | 0x06       | Connection Reset  |       | {{connection-reset-frame}}  |
 | 0x07       | New Address       |       | {{new-address-frame}}       |
 | 0x08       | Remove Address    |       | {{remove-address-frame}}    |
+| 0x09       | Stream Change     |   Cs  | {{stream-change-frame}}     |
 {: #tcpls-frame-types title="TCPLS frames"}
 
 The "Rules" column in {{tcpls-frame-types}} indicates special requirements
@@ -569,6 +570,11 @@ TCPLS acknowledgment.
 S:
 
 : Server only. This frame MUST NOT be sent by the client.
+
+Cs:
+
+: Connection-specific semantics. This frame is not idempotent and has specific
+semantics based on the TCP connection over which it is exchanged.
 
 ### Padding frame
 
@@ -763,6 +769,34 @@ Address ID:
 
 : A 8-bit identifier for the address to remove. An endpoint receiving a frame
 for an address that was nonexistent or already removed MUST ignore the frame.
+
+### Stream Change frame
+
+This frame is used by a sender to announce the Stream ID and Offset
+of the next record over a given TCP connection. It can be used to make
+explicit a change in stream scheduling over a connection to the receiver,
+enabling a zero-copy receive path as explained in {{zero-copy-receive-path}}.
+The hint contained in this frame relates to the connection over which it
+was exchanged.
+
+~~~
+Stream Change frame {
+    Type (8) = 0x09,
+    Next Offset (64),
+    Next Record Stream ID (32),
+}
+~~~
+{: #stream-change-format title="Stream Change format"}
+
+Next Record Stream ID:
+
+: A 32-bit unsigned integer indicating the Stream ID of the Stream frame in the
+next record .
+
+Next Offset:
+
+: A 64-bit unsigned integer indicating the Offset of the Stream frame in the
+next record.
 
 # Security Considerations
 
