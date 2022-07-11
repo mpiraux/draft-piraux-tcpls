@@ -478,8 +478,8 @@ single Stream Data frame as the first frame of the record, followed by
 control-related frames if needed.
 When the sender encodes several Stream frames, the frame at the start of
 the record SHOULD be the largest, in order to maximise the use of zero copy.
-When several Stream frames are included in a record, they SHOULD belong to a
-different stream.
+When several Stream frames are included in a record, they SHOULD belong to
+different streams.
 
 # TCPLS Protocol {#format}
 
