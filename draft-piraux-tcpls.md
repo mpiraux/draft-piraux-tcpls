@@ -19,13 +19,13 @@ author:
     organization: UCLouvain
     email: maxime.piraux@uclouvain.be
  -
+    name: Florentin Rochet
+    organization: University of Namur
+    email: florentin.rochet@unamur.be
+ -
     name: Olivier Bonaventure
     organization: UCLouvain
     email: olivier.bonaventure@uclouvain.be
- -
-   name: Florentin Rochet
-   organization: University of Namur
-   email: florentin.rochet@unamur.be
 
 normative:
   RFC8446:
@@ -476,8 +476,8 @@ Second, the composition
 of TCPLS frames in a TLS record is impactful. The sender SHOULD encode a
 single Stream Data frame as the first frame of the record, followed by
 control-related frames if needed.
-When the sender encodes several Stream frames, the first frame of the record
-SHOULD be the largest, in order to maximise the use of zero copy.
+When the sender encodes several Stream frames, the frame at the start of
+the record SHOULD be the largest, in order to maximise the use of zero copy.
 When several Stream frames are included in a record, they SHOULD belong to a
 different stream.
 
@@ -539,11 +539,33 @@ replenish the tokens when TCP connections are removed from the TCPLS session.
 ## TCPLS Frames
 
 TCPLS uses TLS Application Data records to exchange TCPLS frames. After
-decryption, the record payload consists of a sequence of TCPLS frames. The
-receiver process the frames starting from the last one to the first one.
-A frame is a Value-Type unit. It starts with type-specific fields and ends
-with a byte indicating its frame type. The receiver process a TCPLS frame
-starting from its end towards its beginning. {{tcpls-frame-types}} lists the
+decryption, the record payload consists of a sequence of TCPLS frames.
+{{fig-parsing-tcpls-frames}} illustrates the manner in which TCPLS frames
+are parsed from a decrypted TLS record.
+The receiver processes the frames starting from the last one to the first one.
+The fields of each frames are also parsed from the end towards the beginning
+of the TLS Application Data content. The parsing of a frame starts with the
+last byte indicating the frame type and then with type-specific
+fields preceeding it, forming a Type-Value unit.
+Such ordering enables a zero-copy processing of the type-specific fields as
+explained in {{zero-copy-receive-path}}.
+
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                       First frame start
+                                   |
+0         First frame end          | n
++---------------------|------------|-+
+|                     v            v |
+|      *------------* *------------* |
+| .... | Value |Type| | Value |Type| |
+|      *------------* *------------* |
++------------------------------------+
+        Decrypted TLS record
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+{: #fig-parsing-tcpls-frames title="Parsing TCPLS frames inside a TLS record starts from the end."}
+
+{{tcpls-frame-types}} lists the
 frames specified in this document.
 
 | Type value | Frame name        | Rules | Definition                  |
@@ -879,9 +901,13 @@ comments on the first version of this draft.
 # Change log
 {:numbered="false"}
 
+## Since draft-piraux-tcpls-01
+{:numbered="false"}
+* Change frames and fields order to enable zero-copy receiver.
+
 ## Since draft-piraux-tcpls-00
 {:numbered="false"}
 
 * Added the addresses exchange mechanism with New Address and Remove Address
 frames.
-* Change frames fields order and add constraints on framing to enable zero-copy receiver.
+
