@@ -840,6 +840,32 @@ the "Rules" column.
 
 --- back
 
+# Alternative Designs
+
+In this section, we discuss alternatives to mechanisms defined in this document.
+
+## Securing new TCP connections with New Session Tickets
+
+When adding a new TCP connection to a TCPLS session, endpoints derive a
+Initial Vector based on the technique presented in {{record-protection}}.
+An alternative is to use New Session Tickets to derive separate
+cryptographic protection materials based on a pre-shared key sent by the
+server. In this mode of operation, the server provides New Session Tickets
+to control the amount of additional TCP connections that can be opened by
+the client. The server could encode the Connection ID in the ticket value.
+
+Using this mechanism differs from our proposal in several ways. While it
+enables to use an existing TLS mechanism for this purpose, it has a number
+of differences. First, it requires the server to compute pre-shared keys
+which could be more costly than computing the TCPLS tokens defined in
+{{joining-tcp-connections}}. Second, when used to establish a TLS session,
+additional TLS messages must be computed and exchanged to complete the
+handshake, which the current mechanism does not require.
+Third, TLS New Session Tickets have a lifetime that is separated from the
+session they are exchanged over. This is unneeded in the context of TCPLS
+and may require additional protocol specification and guidance to
+implementers.
+
 # Acknowledgments
 {:numbered="false"}
 
