@@ -586,10 +586,10 @@ struct {
 ~~~~
 
 The "tcpls_token" extension is used by the server to provide a token to the
-client during the TLS handshake. When receiving a ServerHello with this
+client during the TLS handshake. When receiving this
 extension, the client associates the token value as the first token of the TCPLS
 session, i.e. with a sequence number of 1. The server MUST NOT send this
-extension in its ServerHello when the corresponding ClientHello contains
+extension when the corresponding ClientHello contains
 a "tcpls_join" extension.
 
 ## TCPLS Frames
