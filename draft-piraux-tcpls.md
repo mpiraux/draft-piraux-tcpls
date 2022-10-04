@@ -339,16 +339,16 @@ TCPLS handshake. It adds the token inside the TCPLS Join TLS extension in the
 ClientHello.
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
-             <-1.TCPLS Handshake->
-       .---------------------------------.
-       |            <-2.New Token(1,abc) |
-       v                                 v
-+--------+                            +--------+
-| Client |                            | Server |
-+--------+                            +--------+
-       ^                                 ^
-       | 3.TCPLS Handshake + Join(abc)-> |      Legend:
-       .---------------------------------.        --- TCP connection
+              <-1.TCPLS Handshake->
+       .----------------------------------.
+       |             <-2.New Token(1,abc) |
+       v                                  v
++--------+                             +--------+
+| Client |                             | Server |
++--------+                             +--------+
+       ^                                  ^
+       | 3.TCPLS Hsh. + tcpls_join(abc)-> |      Legend:
+       .----------------------------------.        --- TCP connection
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 {: #join-connections title="Joining a new TCP connection"}
 
@@ -363,6 +363,48 @@ Connection ID of the connection. The Connection ID enables the Client and
 the Server to identify a specific TCP connection within a given TCPLS
 session.
 
+### Robust session establishment
+
+The TCPLS protocol also supports robust session establishment, where a
+multihomed client can establish a TCPLS session when at least one network
+path to the server can be established. This guarantees robustness against
+network failures and lowers the overall latency of a session establishment.
+
+{{fig-robust-session-establishment}} illustrates a dual-homed client that
+robustly establish a TCPLS session over two local addresses. In this example,
+the path from IP b towards the server exhibits a higher delay.
+
+~~~~
+Client @ IP a                 Server                 Client @ IP b
+ |             SYN              |             SYN              |
+ |----------------------------->|               /--------------|
+ |           SYN+ACK            |<-------------/               |
+ |<-----------------------------|           SYN+ACK            |
+ | ACK, TLS CH + tcpls          |--------------\               |
+ |----------------------------->|               \------------->|
+ |      TLS SH, EE + tcpls,     |                              |
+ |        tcpls_token(abc), ... |         ACK, TLS CH + tcpls, |
+ |<-----------------------------|           tcpls_join(abc)    |
+ | TLS Finished                 |<-----------------------------|
+ |----------------------------->|                              |
+ | TCPLS session established and 2nd connection can be joined. |
+                               ...
+~~~~
+{: #fig-robust-session-establishment title="Robust session establishment example"}
+
+The client starts by opening a TCP connection on from each of its local
+addresses. The TCP connection from IP "a" towards the server completes faster
+than the other. The client then starts a TCPLS Handshake on
+this connection. When the other connection is established, the client
+waits for receiving a TCPLS token allowing to join it to the session being
+established. In addition to the New Token frame, the TCPLS protocol enables
+the server to provide one such token during the handshake using the TCPLS Token
+TLS extension. The server uses this extension when sending its
+EncryptedExtensions over the faster connection to provide the TCPLS token
+"abc". When the client has received this token, it uses
+it over the other connection to join it to the session.
+When the TLS handshake completes over the fastest connection, the TCPLS session
+is established and the other connection can be joined to the session.
 
 ### Failover
 
@@ -485,15 +527,17 @@ different streams.
 
 ## TCPLS TLS Extensions
 
-This document specifies two TLS extensions used by TCPLS. The first,
+This document specifies three TLS extensions used by TCPLS. The first,
 "tcpls", is used to announce the support of TCPLS. The second,
-"tcpls_join", is used to join a TCP connection to a TCPLS session. Their
-types are defined as follows.
+"tcpls_join", is used to join a TCP connection to a TCPLS session. The third,
+"tcpls_token", is used to provide a token to the client before the handshake
+completes. Their types are defined as follows.
 
 ~~~
 enum {
     tcpls(TBD1),
     tcpls_join(TBD2),
+    tcpls_token(TBD3),
     (65535)
 } ExtensionType;
 ~~~
@@ -501,10 +545,11 @@ enum {
 The table below indicates the TLS messages where these extensions can appear.
 "CH" indicates ClientHello while "EE" indicates EncryptedExtensions.
 
-| Extension  | Allowed TLS messages |
-|:-----------|:---------------------|
-| tcpls      | CH, EE               |
-| tcpls_join | CH                   |
+| Extension   | Allowed TLS messages |
+|:------------|:---------------------|
+| tcpls       | CH, EE               |
+| tcpls_join  | CH                   |
+| tcpls_token | EE                   |
 {: #tcpls-tls-extensions-allowed-tls-messages title="TLS messages allowed
 to carry TCPLS TLS Extensions"}
 
@@ -521,20 +566,31 @@ TCPLS after completing the TLS handshake.
 ~~~~
 struct {
     opaque token<32>;
-} Join;
+} TCPLSJoin;
 ~~~~
 
 The "tcpls_join" extension is used by the client to join the TCP connection
-on which it is sent to a TCPLS session. The extension contains a Token
+on which it is sent to a TCPLS session. The extension contains a token
 provided by the server. The client MUST NOT send more than one
 "tcpls_join" extension in its ClientHello. When receiving a ClientHello with
 this extension, the server checks that the token is valid and joins the TCP
 connection to the corresponding TCPLS session. When the token is not valid,
 the server MUST abort the handshake with an illegal_parameter alert.
 
-By controlling the amount of tokens given to the client, the server can
-control the number of active TCP connections of a TCPLS session. The server SHOULD
-replenish the tokens when TCP connections are removed from the TCPLS session.
+### TCPLS Token
+
+~~~~
+struct {
+    opaque token<32>;
+} TCPLSToken;
+~~~~
+
+The "tcpls_token" extension is used by the server to provide a token to the
+client during the TLS handshake. When receiving a ServerHello with this
+extension, the client associates the token value as the first token of the TCPLS
+session, i.e. with a sequence number of 1. The server MUST NOT send this
+extension in its ServerHello when the corresponding ClientHello contains
+a "tcpls_join" extension.
 
 ## TCPLS Frames
 
@@ -714,6 +770,10 @@ Token:
 
 : A 32-byte opaque value that can be used as a token by the client.
 
+By controlling the amount of tokens given to the client, the server can
+control the number of active TCP connections of a TCPLS session. The server SHOULD
+replenish the tokens when TCP connections are removed from the TCPLS session.
+
 ### Connection Reset frame
 
 This frame is used by the receiver to inform the sender that a TCP
@@ -845,6 +905,7 @@ ExtensionType Values" registry.
 |:------|:---------------|:--------|:------------|:--------------|
 | TBD1  | tcpls          | CH, EE  | N           | This document |
 | TBD2  | tcpls_join     | CH      | N           | This document |
+| TBD3  | tcpls_token    | EE      | N           | This document |
 
 Note that "Recommended" is set to N as these extensions are intended for
 uses as described in this document.
@@ -900,6 +961,11 @@ comments on the first version of this draft.
 
 # Change log
 {:numbered="false"}
+
+## Since draft-piraux-tcpls-02
+{:numbered="false"}
+* Adds the TCPLS Token TLS extension to enable fast robust session
+establishment.
 
 ## Since draft-piraux-tcpls-01
 {:numbered="false"}
