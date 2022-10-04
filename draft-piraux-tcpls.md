@@ -366,9 +366,10 @@ session.
 ### Robust session establishment
 
 The TCPLS protocol also supports robust session establishment, where a
-multihomed client can establish a TCPLS session when at least one network
-path to the server can be established. This guarantees robustness against
-network failures and lowers the overall latency of a session establishment.
+multihomed or dual-stack client can establish a TCPLS session when at least
+one network path to the server can be established. This guarantees robustness
+against network failures and lowers the overall latency of a session
+establishment.
 
 {{fig-robust-session-establishment}} illustrates a dual-homed client that
 robustly establish a TCPLS session over two local addresses. In this example,
@@ -382,9 +383,9 @@ Client @ IP a                 Server                 Client @ IP b
  |<-----------------------------|           SYN+ACK            |
  | ACK, TLS CH + tcpls          |--------------\               |
  |----------------------------->|               \------------->|
- |      TLS SH, EE + tcpls,     |                              |
- |        tcpls_token(abc), ... |         ACK, TLS CH + tcpls, |
- |<-----------------------------|           tcpls_join(abc)    |
+ |      TLS SH, EE + tcpls,     |             ACK              |
+ |        tcpls_token(abc), ... |<-----------------------------|
+ |<-----------------------------|TLS CH + tcpls,tcpls_join(abc)|
  | TLS Finished                 |<-----------------------------|
  |----------------------------->|                              |
  | TCPLS session established and 2nd connection can be joined. |
@@ -401,7 +402,7 @@ established. In addition to the New Token frame, the TCPLS protocol enables
 the server to provide one such token during the handshake using the TCPLS Token
 TLS extension. The server uses this extension when sending its
 EncryptedExtensions over the faster connection to provide the TCPLS token
-"abc". When the client has received this token, it uses
+"abc". As soon as the client has received this token, it uses
 it over the other connection to join it to the session.
 When the TLS handshake completes over the fastest connection, the TCPLS session
 is established and the other connection can be joined to the session.
