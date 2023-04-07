@@ -864,9 +864,9 @@ was exchanged.
 
 ~~~
 Stream Change frame {
-    Type (8) = 0x09,
-    Next Offset (64),
     Next Record Stream ID (32),
+    Next Offset (64),
+    Type (8) = 0x09,
 }
 ~~~
 {: #stream-change-format title="Stream Change format"}
