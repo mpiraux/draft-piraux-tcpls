@@ -1,0 +1,986 @@
+{
+  "magic": "E!vIA5L86J2I",
+  "timestamp": "2023-04-09T01:25:27.226399+00:00",
+  "repo": "mpiraux/draft-piraux-tcpls",
+  "labels": [
+    {
+      "name": "bug",
+      "description": "Something isn't working",
+      "color": "d73a4a"
+    },
+    {
+      "name": "documentation",
+      "description": "Improvements or additions to documentation",
+      "color": "0075ca"
+    },
+    {
+      "name": "duplicate",
+      "description": "This issue or pull request already exists",
+      "color": "cfd3d7"
+    },
+    {
+      "name": "enhancement",
+      "description": "New feature or request",
+      "color": "a2eeef"
+    },
+    {
+      "name": "good first issue",
+      "description": "Good for newcomers",
+      "color": "7057ff"
+    },
+    {
+      "name": "help wanted",
+      "description": "Extra attention is needed",
+      "color": "008672"
+    },
+    {
+      "name": "invalid",
+      "description": "This doesn't seem right",
+      "color": "e4e669"
+    },
+    {
+      "name": "question",
+      "description": "Further information is requested",
+      "color": "d876e3"
+    },
+    {
+      "name": "wontfix",
+      "description": "This will not be worked on",
+      "color": "ffffff"
+    }
+  ],
+  "issues": [
+    {
+      "number": 1,
+      "id": "I_kwDOGMswKM49sw5I",
+      "title": "Sandwich of frames",
+      "url": "https://github.com/mpiraux/draft-piraux-tcpls/issues/1",
+      "state": "CLOSED",
+      "author": "frochet",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [],
+      "body": "Figure 1 shows a TCPLS record having a sandwich of TCPLS DATA/CONTROL/DATA frames. This should be avoided, as this design is the reason why QUIC cannot easily be zero-copy on the receiver side. It either leads implementer to make a contiguous buffer with an additional copy, or to offer fragmented application payloads.\r\n\r\n1) Why would we want to have those sandwiches?\r\n\r\n2) As long as CONTROL frames are after DATA in the same record, we're fine. So we may want to only allow CONTROL frames to be appended in a record already containing DATA if space permits (i.e., if it does not go over max payload size).\r\n",
+      "createdAt": "2021-10-25T13:31:32Z",
+      "updatedAt": "2022-10-06T11:51:01Z",
+      "closedAt": "2022-10-06T11:51:01Z",
+      "comments": [
+        {
+          "author": "frochet",
+          "authorAssociation": "COLLABORATOR",
+          "body": "A believe also that Google QUIC avoids to make those sandwiches in their fully controlled environment, and that's one of the reasons their perf announcement were looking good.",
+          "createdAt": "2021-10-25T13:32:29Z",
+          "updatedAt": "2021-10-25T13:33:25Z"
+        }
+      ]
+    },
+    {
+      "number": 2,
+      "id": "I_kwDOGMswKM49s0WP",
+      "title": "Joining TCP connection [precisions]",
+      "url": "https://github.com/mpiraux/draft-piraux-tcpls/issues/2",
+      "state": "OPEN",
+      "author": "frochet",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [],
+      "body": "\"New Token\" should be an Encrypted TLS Extension (encrypted with the hanshake key if received in the initial handshake) or a TCPLS CONTROL frame if received post handshake.",
+      "createdAt": "2021-10-25T13:45:00Z",
+      "updatedAt": "2021-10-25T15:04:57Z",
+      "closedAt": null,
+      "comments": [
+        {
+          "author": "mpiraux",
+          "authorAssociation": "OWNER",
+          "body": "New Token is a frame currently, is that unclear?\r\nProviding the tokens to the client through a TLS Extension is an interesting idea to dig when we have a bit more time. I have a couple of questions I can't answer quickly enough:\r\n\r\n- It's happening before the handshake is complete, is that a problem?\r\n- What happens if the handshake fails down the line?\r\n- Can we build an oracle based on the token we observe? It's seems a bit easier to do as we don't pay the price of the full handshake\r\n\r\nMost of them can be non-issues, I just can wrap my head around them just now.",
+          "createdAt": "2021-10-25T14:09:20Z",
+          "updatedAt": "2021-10-25T14:09:20Z"
+        },
+        {
+          "author": "frochet",
+          "authorAssociation": "COLLABORATOR",
+          "body": "> It's happening before the handshake is complete, is that a problem?\r\n\r\nI think yes. It should be a TLS Encrypted Extension from the Server or it would not be compliant with TLS 1.3 protocol specs; which means potential middlebox issues, like those amazing cisco firewall that believe anything they don't understand is evil. The notion of what they understand may range from \"This is an Encrypted Extension number I never saw, must be a skilled h4k3r, better block this!\" to \"Uh. This is not an Encrypted Extension from the server's response? qslkdfjqdsf what's my name again?\"\r\n\r\nWe may also use New Token as a TCPLS frame as well post handshake (and should!). Basically this kind of message should be both: a TLS Encrypted Extension and a TCPLS frame we use with the right format in the right context",
+          "createdAt": "2021-10-25T15:04:57Z",
+          "updatedAt": "2021-10-25T15:04:57Z"
+        }
+      ]
+    },
+    {
+      "number": 3,
+      "id": "I_kwDOGMswKM49s1gy",
+      "title": "Concurrent TCP connection establishment (Sec. 4.2.1)",
+      "url": "https://github.com/mpiraux/draft-piraux-tcpls/issues/3",
+      "state": "CLOSED",
+      "author": "frochet",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [],
+      "body": "A kind of protocol data race may happen if, say, the client fires two TCP connections at the same time but the order of establishment is not the same for the client and the server.\r\n\r\nIn this situation one may have the Connection ID swapped for both peer.\r\n\r\nOne solution could be a sanity check after concurrent connection establishments.",
+      "createdAt": "2021-10-25T13:49:36Z",
+      "updatedAt": "2021-10-26T09:53:06Z",
+      "closedAt": "2021-10-26T09:53:06Z",
+      "comments": [
+        {
+          "author": "mpiraux",
+          "authorAssociation": "OWNER",
+          "body": "The Connection ID is derived from the sequence number of the token used, as explained in the last paragraph. Thus, this race does not exists. Is the text unclear in that regard?",
+          "createdAt": "2021-10-25T14:23:27Z",
+          "updatedAt": "2021-10-25T14:23:27Z"
+        },
+        {
+          "author": "frochet",
+          "authorAssociation": "COLLABORATOR",
+          "body": "Ah right. Then how do we specify Connection ID if several TCP connections are performed before the TLS handshake?\r\n",
+          "createdAt": "2021-10-25T14:27:40Z",
+          "updatedAt": "2021-10-25T14:27:40Z"
+        },
+        {
+          "author": "mpiraux",
+          "authorAssociation": "OWNER",
+          "body": "I believe this example fits your question: A client has received two tokens ([1, abc],[2,def]) over a main connection A, it opens two TCP connections. The first one (B) uses the token \"abc\", the second (C) uses the token \"def\". Whenever the TLS handshake completes on connection B or C, the sequence number is retrieved from the token value. For C, its connection ID becomes 2, while it becomes 1 for A.\r\nSo to wrap up, connection IDs are determined in advance by the server when providing the tokens.",
+          "createdAt": "2021-10-25T14:39:33Z",
+          "updatedAt": "2021-10-25T14:39:33Z"
+        },
+        {
+          "author": "frochet",
+          "authorAssociation": "COLLABORATOR",
+          "body": "The problem I am referring is when you don't have a main connection A.\r\n\r\nYou fire TCP A & B, and then handshake over A or B and Join over the other. In that case the Connection ID that is supposed to identify a TCP connection does not actually identify the TCP connection before the TLS handshake and Join handshake terminate.\r\n\r\nMaybe it is a terminology problem. It should identify a TCP connection when its TCPLS handshake state is either Finished or Joined?",
+          "createdAt": "2021-10-25T14:51:31Z",
+          "updatedAt": "2021-10-25T14:51:31Z"
+        },
+        {
+          "author": "mpiraux",
+          "authorAssociation": "OWNER",
+          "body": "Tokens are provided after the handshake fo the main connection A, so I don't get the issue. Connection ID is used to identify a connection part of TCPLS session. if it's not part of a session, it does not have an CID. If it's the first one of a session, it has CID 0. If it's a subsequent connection, it uses the sequence number of the token used when joining as the CID.",
+          "createdAt": "2021-10-25T15:03:33Z",
+          "updatedAt": "2021-10-25T15:03:33Z"
+        }
+      ]
+    },
+    {
+      "number": 4,
+      "id": "I_kwDOGMswKM49s3bT",
+      "title": "Clarify Migration (4.2.3)",
+      "url": "https://github.com/mpiraux/draft-piraux-tcpls/issues/4",
+      "state": "OPEN",
+      "author": "frochet",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [],
+      "body": "I am  not sure to understand the difference between the two paragraphs.\r\n\r\nIn my implementation, I use coupled streams to migrate. This does not look to be the case here.\r\n\r\nCan we confirm/infirm if coupled streams for migration is on the table in this draft? I believe it should, it a nice usage of multiple path capabilities.",
+      "createdAt": "2021-10-25T13:57:03Z",
+      "updatedAt": "2021-10-25T16:07:23Z",
+      "closedAt": null,
+      "comments": [
+        {
+          "author": "mpiraux",
+          "authorAssociation": "OWNER",
+          "body": "All frames are idempotent. So they can be transmitted in any order over one or several connections. Connection migration becomes simple, an endpoint retransmits the frames for which an ACK of their record is missing. The paragraph emphasises that both passive and active migration leverage the same protocol feature.",
+          "createdAt": "2021-10-25T14:32:42Z",
+          "updatedAt": "2021-10-25T14:32:42Z"
+        },
+        {
+          "author": "frochet",
+          "authorAssociation": "COLLABORATOR",
+          "body": "Alright, but it means we cannot do application-level type of migration without enabling failover. It is kinda a downgrade.\r\n\r\nMmh. or not?  That really depends whether app-level conn migration can be useful without any notion of connection reliability.",
+          "createdAt": "2021-10-25T14:35:05Z",
+          "updatedAt": "2021-10-25T14:43:00Z"
+        },
+        {
+          "author": "mpiraux",
+          "authorAssociation": "OWNER",
+          "body": "> Mmh. or not? That really depends whether app-level conn migration can be useful without any notion of connection reliability.\r\n\r\nThat's my opinion also. I don't really see a use for it. In any cases, endpoints could negotiate an extension to avoid sending ACKs, and retransmissions when migrating. But I believe the base case is enabling ACKs.",
+          "createdAt": "2021-10-25T14:44:48Z",
+          "updatedAt": "2021-10-25T14:44:48Z"
+        },
+        {
+          "author": "frochet",
+          "authorAssociation": "COLLABORATOR",
+          "body": "Yep. But I can imagine some weird app usage in privacy-specific context that would regularly move the stream from one network to another (or back and forth) even if the client is not mobile. And non-mobile clients unlikely enable failover.",
+          "createdAt": "2021-10-25T15:41:08Z",
+          "updatedAt": "2021-10-25T15:42:19Z"
+        },
+        {
+          "author": "mpiraux",
+          "authorAssociation": "OWNER",
+          "body": "Then specify it as an extension disabling the ACKs and retransmissions.",
+          "createdAt": "2021-10-25T16:07:23Z",
+          "updatedAt": "2021-10-25T16:07:23Z"
+        }
+      ]
+    },
+    {
+      "number": 5,
+      "id": "I_kwDOGMswKM49s6Lg",
+      "title": "Multipath Transport",
+      "url": "https://github.com/mpiraux/draft-piraux-tcpls/issues/5",
+      "state": "CLOSED",
+      "author": "frochet",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [],
+      "body": "> TCPLS can send all the stream frames belonging to a\r\n> given stream over one or more underlying TCP connections.\r\n\r\nThis is something I avoided to do on purpose because I believe it confuses the application programmer and makes performance enhancement actually trickier if the app does not have full control over which TCP connection some record is sent.\r\n\r\nAllowing a given stream to send packets over one or more underlying TCP drives transport implementers to offer multipath capabilities as a single pipe for the app layer (like in MPQUIC or MPTCP).\r\n\r\nHowever, if some stream packet are restricted to only one TCP connection, that affects how the API is designed and how the App perceives the transport (more like a greybox, which is much better!)\r\n\r\n",
+      "createdAt": "2021-10-25T14:06:24Z",
+      "updatedAt": "2021-10-26T09:52:48Z",
+      "closedAt": "2021-10-26T09:52:48Z",
+      "comments": [
+        {
+          "author": "frochet",
+          "authorAssociation": "COLLABORATOR",
+          "body": "So what would be the arguments to allow a same stream packet to be pushed to any TCP?",
+          "createdAt": "2021-10-25T14:07:57Z",
+          "updatedAt": "2021-10-25T14:07:57Z"
+        },
+        {
+          "author": "obonaventure",
+          "authorAssociation": "COLLABORATOR",
+          "body": "it allows to split the load of a single stream over two different paths",
+          "createdAt": "2021-10-25T14:27:07Z",
+          "updatedAt": "2021-10-25T14:27:07Z"
+        }
+      ]
+    },
+    {
+      "number": 6,
+      "id": "I_kwDOGMswKM49s_Qq",
+      "title": "Fig 8. No reasons to XOR the Connection ID",
+      "url": "https://github.com/mpiraux/draft-piraux-tcpls/issues/6",
+      "state": "CLOSED",
+      "author": "frochet",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [],
+      "body": "The XOR logic on the right side is to avoid to encrypt successive messages that may be identical (that happens in many protocols) with a IV that is almost completely the same.\r\n\r\nWe don't have this concern while adding the Connection ID since it is the same for all records within the same stream.\r\n\r\nThe most logical operation is +. We should avoid any other more complex operation if we don't have an argument for doing it.",
+      "createdAt": "2021-10-25T14:22:48Z",
+      "updatedAt": "2021-10-26T09:52:00Z",
+      "closedAt": "2021-10-26T09:52:00Z",
+      "comments": []
+    },
+    {
+      "number": 7,
+      "id": "I_kwDOGMswKM49tLWf",
+      "title": "Add 5.2 TCPLS TLS Encrypted Extensions",
+      "url": "https://github.com/mpiraux/draft-piraux-tcpls/issues/7",
+      "state": "CLOSED",
+      "author": "frochet",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [],
+      "body": "refers solving #6\r\n\r\n",
+      "createdAt": "2021-10-25T15:06:47Z",
+      "updatedAt": "2021-10-25T15:28:45Z",
+      "closedAt": "2021-10-25T15:28:45Z",
+      "comments": [
+        {
+          "author": "frochet",
+          "authorAssociation": "COLLABORATOR",
+          "body": "Whether or not the Server supports TCPLS should be an encrypted extension (The server may either not respond, or respond \"no\" or \"yes\" encrypted). Not responding would be like answering \"no\".\r\n\r\nNote, In my implem, the Server's encrypted extension was empty (hence it was like answering \"yes\" if sending the extension). Retrospectively, I think servers should be able to tell \"no\" indistinguishably to \"yes\"  from the network",
+          "createdAt": "2021-10-25T15:08:40Z",
+          "updatedAt": "2021-10-25T15:11:23Z"
+        },
+        {
+          "author": "mpiraux",
+          "authorAssociation": "OWNER",
+          "body": "Although it might not be the clearest formulation, the server uses the EE to put the \"tcpls\" extension. We obviously don't want it in the cleartext extension of the server. https://mpiraux.github.io/draft-piraux-tcpls/draft-piraux-tcpls.html#section-5.1.1-1\r\n\r\nThey can add padding to say \"no\" without the byte difference I believe.",
+          "createdAt": "2021-10-25T15:11:17Z",
+          "updatedAt": "2021-10-25T15:11:17Z"
+        },
+        {
+          "author": "mpiraux",
+          "authorAssociation": "OWNER",
+          "body": "The IANA table is wrong in that sense, it reads \"CH, SH\" it should say \"CH, EE\".",
+          "createdAt": "2021-10-25T15:12:40Z",
+          "updatedAt": "2021-10-25T15:12:40Z"
+        },
+        {
+          "author": "frochet",
+          "authorAssociation": "COLLABORATOR",
+          "body": "Yeah. I am questioning whether this extension shouldn't be empty.",
+          "createdAt": "2021-10-25T15:12:53Z",
+          "updatedAt": "2021-10-25T15:12:53Z"
+        },
+        {
+          "author": "mpiraux",
+          "authorAssociation": "OWNER",
+          "body": "In all cases you can't support the case of a server that does not know how to say no. Padding seems more appropriate to me for server that know of TCPLS.",
+          "createdAt": "2021-10-25T15:15:00Z",
+          "updatedAt": "2021-10-25T15:15:00Z"
+        },
+        {
+          "author": "frochet",
+          "authorAssociation": "COLLABORATOR",
+          "body": "Right, encrypted padding for a \"no\" is fine too. As long as it is the same size than the \"yes\".",
+          "createdAt": "2021-10-25T15:16:58Z",
+          "updatedAt": "2021-10-25T15:16:58Z"
+        },
+        {
+          "author": "mpiraux",
+          "authorAssociation": "OWNER",
+          "body": "Going back to the original issue. The TLS RFC does not separate extensions that go into Client|ServerHello from ones in EE. It has a nice table saying which can go where. I'll add that to make sure the ambiguity is cleared.\r\n\r\nhttps://datatracker.ietf.org/doc/html/rfc8446#section-4.2\r\n",
+          "createdAt": "2021-10-25T15:18:36Z",
+          "updatedAt": "2021-10-25T15:18:44Z"
+        }
+      ]
+    },
+    {
+      "number": 8,
+      "id": "I_kwDOGMswKM49tPNY",
+      "title": "Padding Frame",
+      "url": "https://github.com/mpiraux/draft-piraux-tcpls/issues/8",
+      "state": "OPEN",
+      "author": "frochet",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [],
+      "body": "I am not sure to understand why Padding Frame has no content.\r\n\r\nHow can we specify sending a record of N bytes that are just padding? We would need a Length field in Padding frame, no?",
+      "createdAt": "2021-10-25T15:19:55Z",
+      "updatedAt": "2022-10-05T14:28:00Z",
+      "closedAt": null,
+      "comments": [
+        {
+          "author": "mpiraux",
+          "authorAssociation": "OWNER",
+          "body": "Repeat the zeroes, which is the frame type.",
+          "createdAt": "2021-10-25T15:41:13Z",
+          "updatedAt": "2021-10-25T15:41:13Z"
+        },
+        {
+          "author": "frochet",
+          "authorAssociation": "COLLABORATOR",
+          "body": "Woh. That's going to be way too costly to unpack. A length is more appropriate.",
+          "createdAt": "2021-10-25T15:44:41Z",
+          "updatedAt": "2021-10-25T15:44:41Z"
+        },
+        {
+          "author": "obonaventure",
+          "authorAssociation": "COLLABORATOR",
+          "body": "a padding with length would make sense\r\n",
+          "createdAt": "2021-10-25T15:52:35Z",
+          "updatedAt": "2021-10-25T15:52:35Z"
+        },
+        {
+          "author": "frochet",
+          "authorAssociation": "COLLABORATOR",
+          "body": "There's a third direction that could also be investigated. AEAD ciphers already provide padding capabilities, and it might be possible to instrument them to add padding.\r\n\r\nThe advantage would be that the padding would be removed during the decryption, and not to be handled by the TCPLS implementation at the receiver side, leading to a slight speedup. However, as of now, I am not entirely sure this could work seamlessly.\r\n",
+          "createdAt": "2022-10-05T14:28:00Z",
+          "updatedAt": "2022-10-05T14:28:00Z"
+        }
+      ]
+    },
+    {
+      "number": 9,
+      "id": "I_kwDOGMswKM49tQ02",
+      "title": "Stream Frame",
+      "url": "https://github.com/mpiraux/draft-piraux-tcpls/issues/9",
+      "state": "CLOSED",
+      "author": "frochet",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [],
+      "body": "Instead of:\r\n\r\n```\r\nStream frame {\r\n  Type (7) = 0x01,\r\n  FIN (1),\r\n  Stream ID (32),\r\n  Offset (64),\r\n  Length (16),\r\n  Stream Data (...),\r\n}\r\n```\r\nwe should do:\r\n\r\n```\r\nStream frame {\r\n  Stream Data (...),\r\n  Type (7) = 0x01,\r\n  FIN (1),\r\n  Stream ID (32),\r\n  Offset (64),\r\n  Length (16),\r\n}\r\n```\r\nand constraining  1 Stream frame per record.\r\n\r\nThat allows implementing zero-copy easily. Or it is just making the same mistakes than Quic IMO.",
+      "createdAt": "2021-10-25T15:25:51Z",
+      "updatedAt": "2022-10-06T11:51:13Z",
+      "closedAt": "2022-10-06T11:51:13Z",
+      "comments": [
+        {
+          "author": "obonaventure",
+          "authorAssociation": "COLLABORATOR",
+          "body": "I don't see why we should constrain one frame per record, especially for control frames like ack frames. This is only important for bulk transfers that are not necessarily the most important use cases. For the ordering of the information, this is an interesting point to discuss.",
+          "createdAt": "2021-10-25T15:51:24Z",
+          "updatedAt": "2021-10-25T15:51:24Z"
+        },
+        {
+          "author": "mpiraux",
+          "authorAssociation": "OWNER",
+          "body": "It's not as straightforward as frames are Type-values unit so one has to find the type of the Stream frame.",
+          "createdAt": "2021-10-25T15:51:52Z",
+          "updatedAt": "2021-10-25T15:51:52Z"
+        },
+        {
+          "author": "mpiraux",
+          "authorAssociation": "OWNER",
+          "body": "Btw @obonaventure, it's only constraining records to have at most one stream frame, starting with the data.",
+          "createdAt": "2021-10-25T15:53:26Z",
+          "updatedAt": "2021-10-25T15:53:26Z"
+        },
+        {
+          "author": "frochet",
+          "authorAssociation": "COLLABORATOR",
+          "body": "> I don't see why we should constrain one frame per record, especially for control frames like ack frames. This is only important for bulk transfers that are not necessarily the most important use cases. For the ordering of the information, this is an interesting point to discuss.\r\n\r\nOk, let me try to be more clear. We should not constraint 1 frame per record, we should contraint 1 frame that contains APPDATA per record. That means some record can contain any number of control frame, and we can have also any number of control frame after a data frame within the same record (but not before).\r\nThis has significant performance benefit",
+          "createdAt": "2021-10-25T15:54:13Z",
+          "updatedAt": "2021-10-25T15:54:13Z"
+        }
+      ]
+    },
+    {
+      "number": 11,
+      "id": "I_kwDOGMswKM490bFf",
+      "title": "Intended Status is \"Informational\"",
+      "url": "https://github.com/mpiraux/draft-piraux-tcpls/issues/11",
+      "state": "CLOSED",
+      "author": "mpiraux",
+      "authorAssociation": "OWNER",
+      "assignees": [],
+      "labels": [],
+      "body": "",
+      "createdAt": "2021-10-27T08:55:22Z",
+      "updatedAt": "2022-03-04T14:00:01Z",
+      "closedAt": "2022-03-04T14:00:01Z",
+      "comments": []
+    },
+    {
+      "number": 13,
+      "id": "I_kwDOGMswKM5FdqMI",
+      "title": "Add a Signaling for Stream Frame",
+      "url": "https://github.com/mpiraux/draft-piraux-tcpls/issues/13",
+      "state": "CLOSED",
+      "author": "frochet",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [],
+      "body": "To improve the efficiency of zero-copy in a  multiplexed multi-streams case over the same TCP conn, we could announce to which stream belongs the next batch of stream frames.",
+      "createdAt": "2022-03-10T15:53:26Z",
+      "updatedAt": "2022-10-05T14:23:45Z",
+      "closedAt": "2022-10-05T14:23:45Z",
+      "comments": [
+        {
+          "author": "frochet",
+          "authorAssociation": "COLLABORATOR",
+          "body": "resolved in https://github.com/mpiraux/draft-piraux-tcpls/pull/14",
+          "createdAt": "2022-10-05T14:23:45Z",
+          "updatedAt": "2022-10-05T14:23:45Z"
+        }
+      ]
+    }
+  ],
+  "pulls": [
+    {
+      "number": 10,
+      "id": "PR_kwDOGMswKM4toszX",
+      "title": "fix issue 1",
+      "url": "https://github.com/mpiraux/draft-piraux-tcpls/pull/10",
+      "state": "CLOSED",
+      "author": "frochet",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [],
+      "body": "Note, issue  #9 and #1 are linked together. Both should be resolved together.",
+      "createdAt": "2021-10-25T16:28:49Z",
+      "updatedAt": "2021-11-08T15:26:41Z",
+      "baseRepository": "mpiraux/draft-piraux-tcpls",
+      "baseRefName": "main",
+      "baseRefOid": "257dd11c68cdecefd1a6a20a6003433bd41cab2d",
+      "headRepository": "mpiraux/draft-piraux-tcpls",
+      "headRefName": "issue1",
+      "headRefOid": "f290568c2f314158de673daf8a251b9920c84460",
+      "closedAt": "2021-11-08T15:26:41Z",
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": []
+    },
+    {
+      "number": 12,
+      "id": "PR_kwDOGMswKM4uO9ps",
+      "title": "Receiver zero copy proposal change",
+      "url": "https://github.com/mpiraux/draft-piraux-tcpls/pull/12",
+      "state": "MERGED",
+      "author": "frochet",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [],
+      "body": "Proposes a spec change to support potential receiver zero-copy  (addresses #1 and #9)\r\n\r\nFundamentally light changes: two constraints on framing and the order of all frame elements are inverted.",
+      "createdAt": "2021-11-08T15:27:49Z",
+      "updatedAt": "2022-06-13T12:11:05Z",
+      "baseRepository": "mpiraux/draft-piraux-tcpls",
+      "baseRefName": "main",
+      "baseRefOid": "f7925f153ad699f2ec852eebd5778ef034e7e571",
+      "headRepository": "mpiraux/draft-piraux-tcpls",
+      "headRefName": "receiver_zero_copy_proposal_change",
+      "headRefOid": "022fa09ba20f2f9ede64baf07b2bda0b32db8b11",
+      "closedAt": "2022-06-13T12:11:04Z",
+      "mergedAt": "2022-06-13T12:11:04Z",
+      "mergedBy": "frochet",
+      "mergeCommit": {
+        "oid": "52df9243cf01db341007ece3e92245b128897871"
+      },
+      "comments": [
+        {
+          "author": "frochet",
+          "authorAssociation": "COLLABORATOR",
+          "body": "What we loose here is the ability to make sandwiches of Control/DATA/Control within a same TLS record. However we can still do a sandwich with 2 records ( e.g., [control], [Data, Control], with [ ] being one record) and offer a way to implement a zero-copy receiver. ",
+          "createdAt": "2021-11-08T15:41:51Z",
+          "updatedAt": "2021-11-08T15:41:51Z"
+        },
+        {
+          "author": "frochet",
+          "authorAssociation": "COLLABORATOR",
+          "body": "I've added the change for the new frame as well. Could we merge this? Thanks!",
+          "createdAt": "2022-03-09T20:38:40Z",
+          "updatedAt": "2022-03-09T20:38:40Z"
+        },
+        {
+          "author": "mpiraux",
+          "authorAssociation": "OWNER",
+          "body": "Hello, I've a few points to bring on this.\r\n\r\nI would like the draft to discuss in which cases zero-copy receiving can be performed. As I understand it currently, it is limited to receiving a stream in order. The receiver also has to be aware of the stream scheduling of the sender, either because it is trivial and only sends one stream over one connection, or because some signalling is added to the protocol. If this signalling was to be discussed, I would like to see in the future a proposal for it in a separate PR so that we can judge the full mechanism.\r\n\r\nI would rather like the single Stream frame per TLS record requirement to be a recommendation, with a SHOULD. Not all deployments have a sender with greater resources than the receiver, such as with IOT devices. These devices send a low amount of data, potentially coming from several applications objects, each using a separate stream. Forcing such devices to fragment its data over multiple TLS records is quite constraining.\r\n\r\nI would supplement the recommendation with another one indicating that a TLS record containing application data SHOULD start with the largest Stream frame. Although in practice I don't see easy ways for the receiver to guess prior to decryption the stream and offset of this first frame.\r\n\r\nI'm not opposed to changing the order of the fields in frames. I would also like to see a simple statement on how to parse the frames of a TLS record in TCPLS, i.e. from end to beginning. It's a trivial remark but still has value in an IETF draft.",
+          "createdAt": "2022-03-10T08:37:58Z",
+          "updatedAt": "2022-03-10T08:37:58Z"
+        },
+        {
+          "author": "frochet",
+          "authorAssociation": "COLLABORATOR",
+          "body": "> Hello, I've a few points to bring on this.\r\n> \r\n> I would like the draft to discuss in which cases zero-copy receiving can be performed. As I understand it currently, it is limited to receiving a stream in order.\r\n\r\nRight, agree to bring (light?) discussions to highlight how the implementer can take advantage of the design. And, yes, zero-copy would be possible only for stream packets in order. So this is guaranteed if no multiplexing, or if a stream is fully sent within one TCP conn. So I believe there is either API design choices that can help  or/and good scheduling designs that minimize re-ordering, like in MPTCP.\r\n\r\n> The receiver also has to be aware of the stream scheduling of the sender, either because it is trivial and only sends one stream over one connection, or because some signalling is added to the protocol. If this signalling was to be discussed, I would like to see in the future a proposal for it in a separate PR so that we can judge the full mechanism.\r\n\r\nI think it is a good idea to open an issue to enable a signaling mechanism for switching the stream more efficiently in a multiplexed scenario. I believe it is important when the receiver has one receiving buffer per-stream (the case in which we sent application-level objects in their own stream). In the case there is a single receiving buffer, then the signaling mechanism shouldn't have effect on zero-copies. Is that correct? I agree it should be a separate PR.\r\n\r\n> \r\n> I would rather like the single Stream frame per TLS record requirement to be a recommendation, with a SHOULD.\r\n\r\nYes, I see. That makes sense to support packing different Stream frame within the same record. As long as any control comes after, it is alright zero-copy wise. However, performance wise, I would like to discuss:\r\n - Whether it makes sense to prevent two stream frame with the Stream ID in a given record (they should be coalesced?). So we could say that if several Stream Frame are packaged in the same record, they MUST be different stream id. \r\n -  limits over the number of frames we could pack in a record (mainly to avoid abusing that flexibility, such as packing many Stream frames of 1 byte). This should be a different issue / PR  but is somewhat linked.\r\n\r\n> Not all deployments have a sender with greater resources than the receiver, such as with IOT devices. These devices send a low amount of data, potentially coming from several applications objects, each using a separate stream. Forcing such devices to fragment its data over multiple TLS records is quite constraining.\r\n\r\nMakes sense! That should also help the receiver in that case (better to decrypt one large record than many small ones).\r\n\r\n> \r\n> I would supplement the recommendation with another one indicating that a TLS record containing application data SHOULD start with the largest Stream frame. Although in practice I don't see easy ways for the receiver to guess prior to decryption the stream and offset of this first frame.\r\n\r\nI guess a signaling in a control frame could tell. And right, making the first one the largest would minimize the amount of bytes to copy in the case several frames are packaged. Did I understand correctly your recommendation idea here?\r\n\r\n> \r\n> I'm not opposed to changing the order of the fields in frames. I would also like to see a simple statement on how to parse the frames of a TLS record in TCPLS, i.e. from end to beginning. It's a trivial remark but still has value in an IETF draft.\r\n\r\nMakes sense! I'll try to push a commit that addresses the comments. Thanks!\r\n\r\n",
+          "createdAt": "2022-03-10T15:49:20Z",
+          "updatedAt": "2022-03-10T15:49:20Z"
+        },
+        {
+          "author": "mpiraux",
+          "authorAssociation": "OWNER",
+          "body": "> Right, agree to bring (light?) discussions to highlight how the implementer can take advantage of the design.\r\n\r\nYes, there is no need for a lot of details. Stating the cases where zero-copy can be achieved and the ones that can't is enough.\r\n\r\n>  I believe it is important when the receiver has one receiving buffer per-stream (the case in which we sent application-level objects in their own stream). In the case there is a single receiving buffer, then the signaling mechanism shouldn't have effect on zero-copies. Is that correct? I agree it should be a separate PR.\r\n\r\nI think we can keep the discussion as \"zero-copy enables per-stream receiving buffers at no extra cost\". Also stating that this is equivalent to TLS 1.3 is a good argument.\r\n\r\n> Yes, I see. That makes sense to support packing different Stream frame within the same record. As long as any control comes after, it is alright zero-copy wise.\r\n\r\nSo I guess now the recommendation is that the first frame SHOULD be a Stream frame. I am not sure why it should be |S|S|S|C|C and not |S|C|C|S|S. If we decrypt the first stream frame at its supposed correct offset in the buffer, everything that follows must be copied out or erased, no matter if it is a stream frame or any other control frame.\r\n\r\nAs a side note, another application that use several streams that could be packed together is HTTP/3, and I believe HTTP/2 as well, which uses several control streams (3 for h3) to convey much smaller chunks of data than the request or response streams.\r\n\r\n> Whether it makes sense to prevent two stream frame with the Stream ID in a given record (they should be coalesced?). So we could say that if several Stream Frame are packaged in the same record, they MUST be different stream id.\r\n\r\nI get why implicitly allowing this may seems of no use. What I fear of when adding this requirement is the complexity added to the implementation. Of course in the normal code path it seems rather unlikely for such frames to appear. When retransmitting frames on the other hand, there could be such a frame that has to be resegmented or even left out of the retransmission to fit this requirement. The main concern is not the CPU cost of doing that, but rather the complexity of the implementation to avoid sending illegal packets.\r\n\r\n> limits over the number of frames we could pack in a record (mainly to avoid abusing that flexibility, such as packing many Stream frames of 1 byte). This should be a different issue / PR but is somewhat linked.\r\n\r\nI think going in this direction would be better backed with some evidence found in a research work. I get that it is straining for the receiver, but I also think it is straining for the sender to send such frames. It could start from a \"template buffer\" but then has to update the offsets and copy the data to fill in the \"holes\".\r\n\r\n> Did I understand correctly your recommendation idea here?\r\n\r\nYes!",
+          "createdAt": "2022-03-15T09:24:48Z",
+          "updatedAt": "2022-03-15T09:24:48Z"
+        }
+      ],
+      "reviews": [
+        {
+          "id": "PRR_kwDOGMswKM42qNex",
+          "commit": {
+            "abbreviatedOid": "6cffce2"
+          },
+          "author": "mpiraux",
+          "authorAssociation": "OWNER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2022-03-22T10:56:29Z",
+          "updatedAt": "2022-03-22T16:27:28Z",
+          "comments": [
+            {
+              "originalPosition": 21,
+              "body": "I think this sense is already captured by L246-247",
+              "createdAt": "2022-03-22T10:56:29Z",
+              "updatedAt": "2022-03-22T16:27:28Z"
+            },
+            {
+              "originalPosition": 28,
+              "body": "This example is quite fine as it places application data in the front of the TLS record right?",
+              "createdAt": "2022-03-22T10:57:51Z",
+              "updatedAt": "2022-03-22T16:27:28Z"
+            },
+            {
+              "originalPosition": 56,
+              "body": "```suggestion\r\nTCPLS enables the receiver to decrypt and process TLS records in\r\n```",
+              "createdAt": "2022-03-22T15:10:55Z",
+              "updatedAt": "2022-03-22T16:27:28Z"
+            },
+            {
+              "originalPosition": 57,
+              "body": "```suggestion\r\nzero copy similarly to TLS 1.3 under circumstances discussed in \r\n{{zero-copy-receive-path}}.\r\n```",
+              "createdAt": "2022-03-22T15:11:49Z",
+              "updatedAt": "2022-03-22T16:27:28Z"
+            },
+            {
+              "originalPosition": 66,
+              "body": "```suggestion\r\n## Zero-Copy Receive Path\r\n```",
+              "createdAt": "2022-03-22T15:16:11Z",
+              "updatedAt": "2022-03-22T16:27:28Z"
+            },
+            {
+              "originalPosition": 68,
+              "body": "I'll propose text to shorten the presentation. All points are relevant, some need more precision as well.\r\n\r\n> First, Data zero-copy requires the packets to arrive in order.\r\n\r\nNot only that but also to belong to the same Stream. So I would put it as the sender should send a stream on a separate TCP connection, and then discuss the multipath case.",
+              "createdAt": "2022-03-22T15:36:44Z",
+              "updatedAt": "2022-03-22T16:27:28Z"
+            },
+            {
+              "originalPosition": 85,
+              "body": "It think this would be best placed at the start of ## TCPLS Frames",
+              "createdAt": "2022-03-22T15:39:03Z",
+              "updatedAt": "2022-03-22T16:27:28Z"
+            },
+            {
+              "originalPosition": 72,
+              "body": "It also requires that the \"hole\" in the stream buffer is large enough so that the control data (at minimum the stream frame trailer) does not overwrite actual data that was previously received.",
+              "createdAt": "2022-03-22T15:41:50Z",
+              "updatedAt": "2022-03-22T16:27:28Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOGMswKM43STov",
+          "commit": {
+            "abbreviatedOid": "6cffce2"
+          },
+          "author": "frochet",
+          "authorAssociation": "COLLABORATOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2022-03-31T13:09:49Z",
+          "updatedAt": "2022-03-31T13:09:50Z",
+          "comments": [
+            {
+              "originalPosition": 21,
+              "body": "Indeed!",
+              "createdAt": "2022-03-31T13:09:49Z",
+              "updatedAt": "2022-03-31T13:09:50Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOGMswKM43SUxQ",
+          "commit": {
+            "abbreviatedOid": "6cffce2"
+          },
+          "author": "frochet",
+          "authorAssociation": "COLLABORATOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2022-03-31T13:13:02Z",
+          "updatedAt": "2022-03-31T13:13:02Z",
+          "comments": [
+            {
+              "originalPosition": 28,
+              "body": "I wanted here to display the example that is later matching the SHOULD recommendation (i.e., \"the sender SHOULD packetize a single Stream Data frame per record, potentially followed by as many Control Frames ...\"). What do you think?",
+              "createdAt": "2022-03-31T13:13:02Z",
+              "updatedAt": "2022-03-31T13:13:02Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOGMswKM43SYVr",
+          "commit": {
+            "abbreviatedOid": "6cffce2"
+          },
+          "author": "frochet",
+          "authorAssociation": "COLLABORATOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2022-03-31T13:22:32Z",
+          "updatedAt": "2022-03-31T13:22:32Z",
+          "comments": [
+            {
+              "originalPosition": 68,
+              "body": "Ok! \r\n",
+              "createdAt": "2022-03-31T13:22:32Z",
+              "updatedAt": "2022-03-31T13:57:19Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOGMswKM43SY36",
+          "commit": {
+            "abbreviatedOid": "6cffce2"
+          },
+          "author": "frochet",
+          "authorAssociation": "COLLABORATOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2022-03-31T13:23:57Z",
+          "updatedAt": "2022-03-31T13:23:57Z",
+          "comments": [
+            {
+              "originalPosition": 85,
+              "body": "You mean, starting from \"Third, ...\"?",
+              "createdAt": "2022-03-31T13:23:57Z",
+              "updatedAt": "2022-03-31T13:23:57Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOGMswKM43Salv",
+          "commit": {
+            "abbreviatedOid": "6cffce2"
+          },
+          "author": "frochet",
+          "authorAssociation": "COLLABORATOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2022-03-31T13:28:21Z",
+          "updatedAt": "2022-03-31T13:28:21Z",
+          "comments": [
+            {
+              "originalPosition": 72,
+              "body": "Isn't this an implementation choice? E.g., you could decide to copy the data at its actual place within the buffer after decryption (but that's unsafe if records have different sizes between the different streams), or you could use a heap. In the heap case, it should be less efficient but easier to get right.",
+              "createdAt": "2022-03-31T13:28:21Z",
+              "updatedAt": "2022-03-31T13:59:27Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOGMswKM43Sn9e",
+          "commit": {
+            "abbreviatedOid": "6cffce2"
+          },
+          "author": "frochet",
+          "authorAssociation": "COLLABORATOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2022-03-31T13:57:57Z",
+          "updatedAt": "2022-03-31T13:57:58Z",
+          "comments": [
+            {
+              "originalPosition": 68,
+              "body": "I wonder whether we should also reference the stream signaling there too.",
+              "createdAt": "2022-03-31T13:57:58Z",
+              "updatedAt": "2022-03-31T13:57:58Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOGMswKM43m3ey",
+          "commit": {
+            "abbreviatedOid": "42edc8d"
+          },
+          "author": "mpiraux",
+          "authorAssociation": "OWNER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2022-04-06T07:05:54Z",
+          "updatedAt": "2022-04-06T07:05:54Z",
+          "comments": [
+            {
+              "originalPosition": 68,
+              "body": "We can add text saying that additional signaling can help achieving this receive path in more circumstances, but the goal for me is to ship the two things in the same draft version",
+              "createdAt": "2022-04-06T07:05:54Z",
+              "updatedAt": "2022-04-06T07:05:54Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOGMswKM43m3uO",
+          "commit": {
+            "abbreviatedOid": "6cffce2"
+          },
+          "author": "mpiraux",
+          "authorAssociation": "OWNER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2022-04-06T07:06:49Z",
+          "updatedAt": "2022-04-06T07:06:49Z",
+          "comments": [
+            {
+              "originalPosition": 28,
+              "body": "Ok!",
+              "createdAt": "2022-04-06T07:06:49Z",
+              "updatedAt": "2022-04-06T07:06:49Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOGMswKM43m4DC",
+          "commit": {
+            "abbreviatedOid": "6cffce2"
+          },
+          "author": "mpiraux",
+          "authorAssociation": "OWNER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2022-04-06T07:08:00Z",
+          "updatedAt": "2022-04-06T07:08:00Z",
+          "comments": [
+            {
+              "originalPosition": 85,
+              "body": "Yes",
+              "createdAt": "2022-04-06T07:08:00Z",
+              "updatedAt": "2022-04-06T07:08:00Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOGMswKM43m4XB",
+          "commit": {
+            "abbreviatedOid": "42edc8d"
+          },
+          "author": "mpiraux",
+          "authorAssociation": "OWNER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2022-04-06T07:09:14Z",
+          "updatedAt": "2022-04-06T07:09:15Z",
+          "comments": [
+            {
+              "originalPosition": 95,
+              "body": "```suggestion\r\nrecord may either be Data or Control information. When multiple Stream\r\n```",
+              "createdAt": "2022-04-06T07:09:14Z",
+              "updatedAt": "2022-04-06T07:09:15Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOGMswKM43m9rc",
+          "commit": {
+            "abbreviatedOid": "42edc8d"
+          },
+          "author": "mpiraux",
+          "authorAssociation": "OWNER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2022-04-06T07:23:11Z",
+          "updatedAt": "2022-04-06T07:23:11Z",
+          "comments": [
+            {
+              "originalPosition": 72,
+              "body": "A receiver knows the size of the cleartext when receiving an encrypted record. To take the decision to try decrypting in place, the receiver must be sure that the next hole in the Stream buffer is large enough to fit all the cleartext in.\r\nA sender that schedules a stream over multiple TCP connections cannot adapt the size of the Stream frames so that all received records that fills holes in the buffer can be decrypted in place. \r\nAnother way to say this it is not always possible because these holes can be smaller than the protocol cleartext required to fill them.\r\nMy comment on the text was that being in order is not the sole property to enable in-place decryption. It must also fit in the \"hole\". I'm not sure how to explain this in a short text though.",
+              "createdAt": "2022-04-06T07:23:11Z",
+              "updatedAt": "2022-04-06T07:23:11Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOGMswKM43vR0h",
+          "commit": {
+            "abbreviatedOid": "6cffce2"
+          },
+          "author": "frochet",
+          "authorAssociation": "COLLABORATOR",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2022-04-07T14:11:58Z",
+          "updatedAt": "2022-04-07T14:11:58Z",
+          "comments": [
+            {
+              "originalPosition": 72,
+              "body": "> My comment on the text was that being in order is not the sole property to enable in-place decryption. It must also fit in the \"hole\". I'm not sure how to explain this in a short text though.\r\n\r\nI am not sure to understand what this \"hole\" is then. I don't think I was referring to the same thing above. However it seems to be an implementation detail, no? Or is there a protocol event that prevents zero-copy when it is order?\r\n\r\nlet me try to understand this with an example:\r\n\r\ndata <- read()\r\ndecrypt_into(stream_buffer, data) // here stream_buffer should have reserved enough memory to hold the decrypted data. Is that the hole you refer?\r\nThen two situations:\r\n- the ordering is right. stream_buffer contains the data. The trail (the control info) will be overridden at the next decrypt_into() (assuming stream_buffer's size was correctly provisioned before).\r\n- the decrypted data is at index _i_, and the ordering is not right. We need to copy it to stream_buffer at _offset_(_offset_ > _i_).Two implem choices: \r\n1. We copy directly within stream_buffer at _offset_. \r\n2. We push the thing in a heap (would cost 2 copy eventually)\r\n\r\nThe first implem choice has the issue I refer above., i.e., unsafe in case  _offset_ - _i_ < Max size Stream Frame since the next frame to decrypt at index _i_ potentially override _offset_.\r\n\r\nThat might be outside of the scope of the protocol description. Potentially, the total size of Stream DATA within a given record could be constant, which solves the memory safety issue.",
+              "createdAt": "2022-04-07T14:11:58Z",
+              "updatedAt": "2022-04-07T14:11:58Z"
+            }
+          ]
+        },
+        {
+          "id": "PRR_kwDOGMswKM44GzYC",
+          "commit": {
+            "abbreviatedOid": "6cffce2"
+          },
+          "author": "mpiraux",
+          "authorAssociation": "OWNER",
+          "state": "COMMENTED",
+          "body": "",
+          "createdAt": "2022-04-13T17:16:20Z",
+          "updatedAt": "2022-04-13T17:16:20Z",
+          "comments": [
+            {
+              "originalPosition": 72,
+              "body": "Yes, we are reaching common understanding I think. Let me also take an example to illustrate this\r\n\r\n```\r\n[| DATA 1 | SH1] [| DATA 3 | SH3] [| DATA 2 | SH2]\r\n```\r\nLet this be 3 records, each containing a Stream frame. They carry 3 chunks of a piece of data. All frames have the same size. They are received in the order illustrated above. After receiving the two records the buffer is:\r\n\r\n```\r\n| DATA 1 | SH1____| DATA 3 | SH3\r\n```\r\nAt this point, receiving the third record means receiving data in-order. But DATA 2 cannot be placed in the hole in the buffer as SH2 would overwrite a part of DATA 3. But as you pointed out, that is assuming that the implementation takes the first choice indeed.\r\n\r\nIn any case such situation costs two copies indeed, either because DATA3 is copied out of the buffer instead of being moved at the right offset (risking to create the hole) and then needs to be copied back when it becomes in-order again. Or because DATA 3 is copied at the right offset, then DATA 2 is decrypted in a temporary buffer and then copied back at the correct offset.\r\n\r\nThis level of detail is indeed to much for the draft, but the discussion was interesting for me to understand the ways to implement it. Now the \"may be\" part in the rest of the sentence makes sense to me.\r\n\r\nNow back to the protocol description, I think there is no way to prevent these two copies when one Stream frame arrives out-of-order. But I was thinking that my example here was the only way to deal with it, not thinking of the second option.\r\n\r\n> Potentially, the total size of Stream DATA within a given record could be constant, which solves the memory safety issue.\r\n\r\nI'm not sure how that helps here to reduce the two copies.",
+              "createdAt": "2022-04-13T17:16:20Z",
+              "updatedAt": "2022-04-13T17:16:20Z"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "number": 14,
+      "id": "PR_kwDOGMswKM45jppm",
+      "title": "Stream change frame",
+      "url": "https://github.com/mpiraux/draft-piraux-tcpls/pull/14",
+      "state": "MERGED",
+      "author": "frochet",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [],
+      "body": "Announcing the peer that the next record holds a different Stream frame to ensure its decryption within the correct buffer right away.",
+      "createdAt": "2022-06-13T12:08:37Z",
+      "updatedAt": "2023-04-07T08:16:47Z",
+      "baseRepository": "mpiraux/draft-piraux-tcpls",
+      "baseRefName": "main",
+      "baseRefOid": "52df9243cf01db341007ece3e92245b128897871",
+      "headRepository": "mpiraux/draft-piraux-tcpls",
+      "headRefName": "stream_switch_frame",
+      "headRefOid": "7c50882d9631ccbc0ccc04baca7e6be5111e8159",
+      "closedAt": "2022-06-30T10:00:02Z",
+      "mergedAt": "2022-06-30T10:00:02Z",
+      "mergedBy": "frochet",
+      "mergeCommit": {
+        "oid": "953ee26c1149e49205111e6ffd33ea0505069b0c"
+      },
+      "comments": [
+        {
+          "author": "frochet",
+          "authorAssociation": "COLLABORATOR",
+          "body": "Looks like great slight touches! Thanks\r\n",
+          "createdAt": "2022-06-30T09:59:55Z",
+          "updatedAt": "2022-06-30T09:59:55Z"
+        },
+        {
+          "author": "frochet",
+          "authorAssociation": "COLLABORATOR",
+          "body": "Hmm. Looks like this frame is not reversed; this PR was probably for the 02 draft, and ended-up merged in 03, which requires reversing all frames.\r\n\r\nNote. I've thought of a cleaner solution to handle zero-copy with stream multiplexing; it involves copying Quic's way of having an encrypted  header. We could have some Stream id & offset information encrypted next to the TLS header from a simple permutation. This would still be middlebox resilient, and would provide the information needed to decrypt the payload into the right stream buffer without much overhead.\r\n",
+          "createdAt": "2023-04-07T08:16:46Z",
+          "updatedAt": "2023-04-07T08:16:46Z"
+        }
+      ],
+      "reviews": []
+    },
+    {
+      "number": 15,
+      "id": "PR_kwDOGMswKM46adrM",
+      "title": "Discuss the use of TLS 1.3 NST for additional TCP connections",
+      "url": "https://github.com/mpiraux/draft-piraux-tcpls/pull/15",
+      "state": "MERGED",
+      "author": "mpiraux",
+      "authorAssociation": "OWNER",
+      "assignees": [],
+      "labels": [],
+      "body": "I started a section in the appendix discussing the differences between the current IV derivation technique and what using TLS 1.3 NST could be. I'm not sure in which ways this section should be expanded.",
+      "createdAt": "2022-06-27T12:43:04Z",
+      "updatedAt": "2022-07-11T16:33:35Z",
+      "baseRepository": "mpiraux/draft-piraux-tcpls",
+      "baseRefName": "main",
+      "baseRefOid": "52df9243cf01db341007ece3e92245b128897871",
+      "headRepository": "mpiraux/draft-piraux-tcpls",
+      "headRefName": "nst_discussion",
+      "headRefOid": "cd72db6f1edbafa68071c97f9c5ca48a53a711d9",
+      "closedAt": "2022-07-11T14:32:23Z",
+      "mergedAt": "2022-07-11T14:32:23Z",
+      "mergedBy": "mpiraux",
+      "mergeCommit": {
+        "oid": "44255091de227dd4b86f568a7f2c9809d3c29d42"
+      },
+      "comments": [
+        {
+          "author": "frochet",
+          "authorAssociation": "COLLABORATOR",
+          "body": "Missed the notification. Looks excellent anyway! Thanks",
+          "createdAt": "2022-07-11T16:33:35Z",
+          "updatedAt": "2022-07-11T16:33:35Z"
+        }
+      ],
+      "reviews": []
+    },
+    {
+      "number": 16,
+      "id": "PR_kwDOGMswKM5N0wEi",
+      "title": "reverse frame needed for zero-copy",
+      "url": "https://github.com/mpiraux/draft-piraux-tcpls/pull/16",
+      "state": "MERGED",
+      "author": "frochet",
+      "authorAssociation": "COLLABORATOR",
+      "assignees": [],
+      "labels": [],
+      "body": "Fixes #14 ",
+      "createdAt": "2023-04-07T08:25:47Z",
+      "updatedAt": "2023-04-07T13:53:00Z",
+      "baseRepository": "mpiraux/draft-piraux-tcpls",
+      "baseRefName": "main",
+      "baseRefOid": "d2c90b0e05efa03662ec2d285390b44aef85b42e",
+      "headRepository": "mpiraux/draft-piraux-tcpls",
+      "headRefName": "stream_switch_frame",
+      "headRefOid": "0de4b960ec8775f8a109554533a179ca52351bf9",
+      "closedAt": "2023-04-07T13:52:59Z",
+      "mergedAt": "2023-04-07T13:52:59Z",
+      "mergedBy": "mpiraux",
+      "mergeCommit": {
+        "oid": "b56205be78ccc20710d67bb7704faa8a413ec85b"
+      },
+      "comments": [
+        {
+          "author": "mpiraux",
+          "authorAssociation": "OWNER",
+          "body": "Good catch",
+          "createdAt": "2023-04-07T13:52:54Z",
+          "updatedAt": "2023-04-07T13:52:54Z"
+        }
+      ],
+      "reviews": []
+    }
+  ]
+}
