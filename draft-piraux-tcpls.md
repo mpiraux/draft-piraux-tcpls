@@ -16,7 +16,7 @@ pi: [toc, sortrefs, symrefs]
 author:
  -
     name: Maxime Piraux
-    organization: UCLouvain
+    organization: UCLouvain, WEL RI
     email: maxime.piraux@uclouvain.be
  -
     name: Florentin Rochet
@@ -24,7 +24,7 @@ author:
     email: florentin.rochet@unamur.be
  -
     name: Olivier Bonaventure
-    organization: UCLouvain
+    organization: UCLouvain, WEL RI
     email: olivier.bonaventure@uclouvain.be
 
 normative:
@@ -43,6 +43,7 @@ informative:
   RFC7540:
   RFC3552:
   I-D.ietf-tls-dtls13:
+  I-D.bonaventure-tcp-ao-tls:
   CONEXT21:
     author:
      - ins: F. Rochet
@@ -487,6 +488,17 @@ This construction guarantees that every TLS record sent over the TLS session
 is protected with a unique nonce. As in TLS 1.3, the per-connection record
 sequence is implicit.
 
+## Authenticating TCP with Opportunistic TCP-AO
+
+The TCP packets exchanged by TCPLS endpoints can be authenticated using the
+opportunistic mode for TCP-AO defined in {{I-D.bonaventure-tcp-ao-tls}}. The
+TCP connection initiating the TCPLS session follows the same procedure as
+described in {{I-D.bonaventure-tcp-ao-tls}}. Then, additional TCP connections
+can reuse the MKT derived from the TLS handshake. When using TCP-AO over
+several TCP connections of a TCPLS session, endpoints SHOULD use different
+KeyID values that appears as random to observers toi avoid correlation.
+Enabling TCP-AO on TCP connections part of a TCPLS session remains a
+per-connection decision.
 
 ## Closing a TCPLS session
 
@@ -963,14 +975,18 @@ comments on the first version of this draft.
 # Change log
 {:numbered="false"}
 
+## Since draft-piraux-tcpls-03
+{:numbered="false"}
+* Integrated Opportunistic TCP-AO
+
 ## Since draft-piraux-tcpls-02
 {:numbered="false"}
-* Adds the TCPLS Token TLS extension to enable fast robust session
+* Added the TCPLS Token TLS extension to enable fast robust session
 establishment.
 
 ## Since draft-piraux-tcpls-01
 {:numbered="false"}
-* Change frames and fields order to enable zero-copy receiver.
+* Changed frames and fields order to enable zero-copy receiver.
 
 ## Since draft-piraux-tcpls-00
 {:numbered="false"}
