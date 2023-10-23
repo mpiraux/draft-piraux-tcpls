@@ -16,7 +16,7 @@ pi: [toc, sortrefs, symrefs]
 author:
  -
     name: Maxime Piraux
-    organization: UCLouvain, WEL RI
+    organization: UCLouvain & WELRI
     email: maxime.piraux@uclouvain.be
  -
     name: Florentin Rochet
@@ -24,7 +24,7 @@ author:
     email: florentin.rochet@unamur.be
  -
     name: Olivier Bonaventure
-    organization: UCLouvain, WEL RI
+    organization: UCLouvain & WELRI
     email: olivier.bonaventure@uclouvain.be
 
 normative:
