@@ -43,7 +43,7 @@ informative:
   RFC7540:
   RFC3552:
   I-D.ietf-tls-dtls13:
-  I-D.bonaventure-tcp-ao-tls:
+  I-D.piraux-tcp-ao-tls:
   CONEXT21:
     author:
      - ins: F. Rochet
@@ -491,9 +491,9 @@ sequence is implicit.
 ## Authenticating TCP with Opportunistic TCP-AO
 
 The TCP packets exchanged by TCPLS endpoints can be authenticated using the
-opportunistic mode for TCP-AO defined in {{I-D.bonaventure-tcp-ao-tls}}. The
+opportunistic mode for TCP-AO defined in {{I-D.piraux-tcp-ao-tls}}. The
 TCP connection initiating the TCPLS session follows the same procedure as
-described in {{I-D.bonaventure-tcp-ao-tls}}. Then, additional TCP connections
+described in {{I-D.piraux-tcp-ao-tls}}. Then, additional TCP connections
 can reuse the MKT derived from the TLS handshake. When using TCP-AO over
 several TCP connections of a TCPLS session, endpoints SHOULD use different
 KeyID values that appears as random to observers toi avoid correlation.
